@@ -65,7 +65,9 @@ if [ "$PKG_MGR" = "apt" ]; then
 else
     # Amazon Linux 2023 / RHEL / CentOS
     $PKG_MGR update -y
-    $PKG_MGR install -y curl git
+    if ! command -v git &> /dev/null; then
+        $PKG_MGR install -y git
+    fi
     if ! command -v docker &> /dev/null; then
         $PKG_MGR install -y docker
     fi
