@@ -133,10 +133,10 @@ jobs:
         env:
           DOCKER_USER: ${{ secrets.DOCKER_USERNAME || secrets.DOCKERHUB_USERNAME || secrets.DOCKER_USER }}
           DOCKER_PASS: ${{ secrets.DOCKER_TOKEN || secrets.DOCKER_PASSWORD || secrets.DOCKERHUB_TOKEN || secrets.DOCKERHUB_PASSWORD }}
-          APP_DIR: "/home/${{ secrets.AWS_USER || 'ubuntu' }}/clarity-retail-hub"
+          APP_DIR: "/home/${{ secrets.AWS_USER || 'ec2-user' }}/clarity-retail-hub"
         with:
           host: ${{ secrets.AWS_HOST }}
-          username: ${{ secrets.AWS_USER || 'ubuntu' }}
+          username: ${{ secrets.AWS_USER || 'ec2-user' }}
           key: ${{ secrets.AWS_SSH_PRIVATE_KEY || secrets.AWS_SSH_KEY }}
           port: ${{ secrets.AWS_PORT || 22 }}
           envs: DOCKER_USER,DOCKER_PASS,APP_DIR

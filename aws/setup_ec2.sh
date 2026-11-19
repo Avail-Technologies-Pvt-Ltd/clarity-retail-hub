@@ -1,10 +1,7 @@
 #!/bin/bash
 # ============================================================
-# Clarity Retail Hub - AWS EC2 Initial Setup Script (Ubuntu)
-# ============================================================
-# Usage on fresh Ubuntu EC2:
-#   curl -fsSL https://raw.githubusercontent.com/Avail-Technologies-Pvt-Ltd/clarity-retail-hub/main/aws/setup_ec2.sh | sudo bash
-#   or run locally: sudo bash setup_ec2.sh
+# Clarity Retail Hub - AWS EC2 Initial Setup Script
+# Supports both Amazon Linux 2023 / AL2 and Ubuntu Server
 # ============================================================
 
 set -e
@@ -19,43 +16,82 @@ if [ "$EUID" -ne 0 ]; then
   exit 1
 fi
 
-TARGET_USER="${SUDO_USER:-ubuntu}"
+# Detect non-root target user (ec2-user or ubuntu)
+TARGET_USER="${SUDO_USER:-$(whoami)}"
+if [ "$TARGET_USER" = "root" ]; then
+    if id -u ec2-user >/dev/null 2>&1; then
+        TARGET_USER="ec2-user"
+    elif id -u ubuntu >/dev/null 2>&1; then
+        TARGET_USER="ubuntu"
+    fi
+fi
+
 TARGET_HOME=$(getent passwd "$TARGET_USER" | cut -d: -f6)
 APP_DIR="$TARGET_HOME/clarity-retail-hub"
 
-echo "[1/6] Updating system packages..."
-apt-get update && apt-get upgrade -y
-apt-get install -y curl git ufw ca-certificates gnupg lsb-release
+echo "[INFO] Configuring for target user: $TARGET_USER ($TARGET_HOME)"
+echo "[INFO] Target application directory: $APP_DIR"
 
-echo "[2/6] Installing Docker Engine & Docker Compose plugin..."
-if ! command -v docker &> /dev/null; then
-    curl -fsSL https://get.docker.com -o /tmp/get-docker.sh
-    sh /tmp/get-docker.sh
-    rm -f /tmp/get-docker.sh
+# Detect OS Package Manager
+if command -v dnf &> /dev/null; then
+    PKG_MGR="dnf"
+elif command -v yum &> /dev/null; then
+    PKG_MGR="yum"
+elif command -v apt-get &> /dev/null; then
+    PKG_MGR="apt"
+else
+    echo "[ERROR] Unsupported package manager."
+    exit 1
 fi
 
-systemctl enable docker
-systemctl start docker
+echo "[1/6] Installing Docker Engine & dependencies ($PKG_MGR)..."
+if [ "$PKG_MGR" = "apt" ]; then
+    apt-get update && apt-get upgrade -y
+    apt-get install -y curl git ufw ca-certificates gnupg lsb-release
+    if ! command -v docker &> /dev/null; then
+        curl -fsSL https://get.docker.com -o /tmp/get-docker.sh
+        sh /tmp/get-docker.sh
+        rm -f /tmp/get-docker.sh
+    fi
+    systemctl enable docker
+    systemctl start docker
+    
+    # Configure UFW firewall on Ubuntu
+    ufw allow 22/tcp comment 'SSH' || true
+    ufw allow 80/tcp comment 'HTTP Web' || true
+    ufw allow 443/tcp comment 'HTTPS Web' || true
+    ufw allow 8003/tcp comment 'Clarity Hub Port' || true
+    ufw --force enable || true
+else
+    # Amazon Linux 2023 / RHEL / CentOS
+    $PKG_MGR update -y
+    $PKG_MGR install -y curl git
+    if ! command -v docker &> /dev/null; then
+        $PKG_MGR install -y docker
+    fi
+    systemctl enable --now docker
+
+    # Install Docker Compose Plugin if missing
+    if ! docker compose version &> /dev/null; then
+        echo "[*] Installing Docker Compose CLI plugin..."
+        CLI_PLUGINS_DIR="/usr/local/lib/docker/cli-plugins"
+        mkdir -p "$CLI_PLUGINS_DIR"
+        ARCH=$(uname -m)
+        curl -SL "https://github.com/docker/compose/releases/latest/download/docker-compose-linux-$ARCH" -o "$CLI_PLUGINS_DIR/docker-compose"
+        chmod +x "$CLI_PLUGINS_DIR/docker-compose"
+    fi
+fi
 
 # Add target user to docker group
 usermod -aG docker "$TARGET_USER"
-echo "[OK] Docker installed. Added $TARGET_USER to docker group."
+echo "[OK] Docker installed and user '$TARGET_USER' added to docker group."
 
-echo "[3/6] Setting up application directory: $APP_DIR..."
+echo "[2/6] Setting up application directories..."
 mkdir -p "$APP_DIR/media" "$APP_DIR/staticfiles" "$APP_DIR/logs" "$APP_DIR/data"
-
-# Ensure permissions
 chown -R "$TARGET_USER:$TARGET_USER" "$APP_DIR"
 chmod -R 775 "$APP_DIR/media" "$APP_DIR/staticfiles" "$APP_DIR/logs"
 
-echo "[4/6] Configuring Firewall (UFW)..."
-ufw allow 22/tcp comment 'SSH'
-ufw allow 80/tcp comment 'HTTP Web'
-ufw allow 443/tcp comment 'HTTPS Web'
-ufw allow 8003/tcp comment 'Clarity Hub Port Optional'
-ufw --force enable
-
-echo "[5/6] Creating default environment and docker-compose files..."
+echo "[3/6] Creating default .env.prod if not present..."
 if [ ! -f "$APP_DIR/.env.prod" ]; then
     RANDOM_SECRET=$(python3 -c "import secrets; print(secrets.token_urlsafe(50))" 2>/dev/null || openssl rand -base64 40)
     RANDOM_DB_PASS=$(python3 -c "import secrets; print(secrets.token_urlsafe(24))" 2>/dev/null || openssl rand -base64 20)
@@ -98,7 +134,7 @@ EOF
     echo "[OK] Created $APP_DIR/.env.prod with secure random credentials."
 fi
 
-echo "[6/6] Creating update.sh and rollback.sh helper scripts..."
+echo "[4/6] Creating helper scripts (update.sh and rollback.sh)..."
 cat << 'EOF' > "$APP_DIR/update.sh"
 #!/bin/bash
 set -e
@@ -161,8 +197,5 @@ chown "$TARGET_USER:$TARGET_USER" "$APP_DIR/update.sh" "$APP_DIR/rollback.sh"
 echo ""
 echo "============================================================"
 echo " AWS EC2 SETUP COMPLETE!"
-echo " Next steps:"
-echo " 1. Update DOCKER_REGISTRY in $APP_DIR/.env.prod with your Docker Hub username."
-echo " 2. Add GitHub Repository Secrets: AWS_HOST, AWS_USER, AWS_SSH_PRIVATE_KEY."
-echo " 3. Run push.bat from your development PC for 1-click deployments!"
+echo " You are ready for 1-click deployments!"
 echo "============================================================"
