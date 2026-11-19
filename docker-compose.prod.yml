@@ -1,0 +1,62 @@
+# ============================================================
+# docker-compose.prod.yml — Clarity Retail Hub
+# Production deployment stack: Multi-Tenant Django Hub + PostgreSQL
+# ============================================================
+
+services:
+  db:
+    image: postgres:13
+    container_name: clarity_hub_prod_db
+    restart: always
+    environment:
+      POSTGRES_DB: ${DB_NAME:-clarity_retail_hub_prod}
+      POSTGRES_USER: ${DB_USER:-hub_prod_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - hub_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-hub_prod_user} -d ${DB_NAME:-clarity_retail_hub_prod}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  web:
+    image: ${DOCKER_REGISTRY:-tinashemp}/clarity-retail-hub:${TAG:-latest}
+    container_name: clarity_hub_prod_app
+    restart: always
+    ports:
+      - "${HOST_PORT:-80}:8000"
+    env_file:
+      - .env.prod
+    environment:
+      - DJANGO_SETTINGS_MODULE=retail_hub.settings_prod
+      - DB_HOST=db
+      - DB_PORT=5432
+      - PYTHONUNBUFFERED=1
+      - GUNICORN_WORKERS=${GUNICORN_WORKERS:-0}
+    volumes:
+      - hub_prod_media:/app/media
+      - hub_prod_staticfiles:/app/staticfiles
+      - hub_prod_logs:/app/logs
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 35s
+    deploy:
+      resources:
+        limits:
+          memory: 1536M
+        reservations:
+          memory: 256M
+
+volumes:
+  hub_postgres_data:
+  hub_prod_media:
+  hub_prod_staticfiles:
+  hub_prod_logs:

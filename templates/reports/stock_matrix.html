@@ -1,0 +1,145 @@
+{% extends 'partials/base.html' %}
+{% block title %}Cross-Branch Live Stock Matrix — {{ tenant.name }}{% endblock %}
+{% block nav_reports %}active{% endblock %}
+
+{% block extra_head %}
+<style>
+    @media (max-width: 640px) {
+        .search-form-wrap {
+            flex-direction: column !important;
+            align-items: stretch !important;
+        }
+        .search-input-box {
+            width: 100% !important;
+            min-width: 100% !important;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; flex-wrap:wrap; gap:16px;">
+    <div>
+        <div style="display:flex; align-items:center; gap:10px;">
+            <a href="{% url 'reports_dashboard' %}?tab=stock" class="btn-hub-ghost" style="padding:4px 8px;" title="Back to Reports">
+                <i class="fa-solid fa-arrow-left"></i>
+            </a>
+            <h1 class="hub-title" style="margin-bottom:0;">Cross-Branch Live Stock Matrix</h1>
+        </div>
+        <p class="hub-subtitle" style="margin:4px 0 0 34px;">Real-time inventory lookup across all physical branches with inter-branch in-transit buffer tracking.</p>
+    </div>
+    <div style="display:flex; gap:10px; align-items:center;">
+        <a href="{% url 'export_stock_matrix_csv' %}" class="btn-hub-primary">
+            <i class="fa-solid fa-file-csv"></i> Export Matrix CSV
+        </a>
+    </div>
+</div>
+
+<!-- ── Search & Filter Box ─────────────────────────────────────────── -->
+<div class="hub-card" style="margin-bottom:20px; padding:16px 20px;">
+    <form method="GET" action="" class="search-form-wrap" style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+        <div class="search-input-box" style="flex:1; min-width:260px; position:relative;">
+            <i class="fa-solid fa-magnifying-glass" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#64748b;"></i>
+            <input type="text" name="search" value="{{ search_query }}" placeholder="Search product name, part number, or barcode..." class="filter-input" style="padding-left:36px; width:100%;">
+        </div>
+        <button type="submit" class="btn-hub-primary">
+            <i class="fa-solid fa-filter"></i> Filter Catalog
+        </button>
+        {% if search_query %}
+        <a href="{% url 'stock_matrix' %}" class="btn-hub-ghost">Clear</a>
+        {% endif %}
+    </form>
+</div>
+
+<!-- ── Matrix Grid Table ───────────────────────────────────────────── -->
+<div class="hub-card">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
+        <h3 style="font-size:1.05rem; font-weight:700; color:#f1f5f9;">
+            Catalog Inventory Matrix ({{ total_products_count }} Items)
+        </h3>
+        <div style="display:flex; align-items:center; gap:14px; font-size:.76rem; color:#94a3b8;">
+            <span><i class="fa-solid fa-circle" style="color:#10b981; font-size:.55rem; margin-right:4px;"></i>In Stock (>10)</span>
+            <span><i class="fa-solid fa-circle" style="color:#f59e0b; font-size:.55rem; margin-right:4px;"></i>Low Stock (1-10)</span>
+            <span><i class="fa-solid fa-circle" style="color:#f43f5e; font-size:.55rem; margin-right:4px;"></i>Out of Stock (0)</span>
+        </div>
+    </div>
+
+    <div class="hub-table-container">
+        <table class="hub-table">
+            <thead>
+                <tr>
+                    <th style="min-width:220px;">Product Name & Category</th>
+                    <th>Barcode</th>
+                    <th>Price</th>
+                    {% for b in branches %}
+                    <th style="text-align:center; min-width:110px;">
+                        <div>{{ b.branch_code }}</div>
+                        <div style="font-size:.65rem; color:#64748b; font-weight:400;">
+                            {% if b.is_main_branch %}<span style="color:#2dd4bf;"><i class="fa-solid fa-crown"></i> Main</span>{% else %}{{ b.name|truncatechars:12 }}{% endif %}
+                        </div>
+                    </th>
+                    {% endfor %}
+                    <th style="text-align:center;">In Transit</th>
+                    <th style="text-align:right; min-width:110px;">Total Chain Stock</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in matrix_rows %}
+                <tr>
+                    <td>
+                        <div style="font-weight:700; color:#f8fafc; font-size:.88rem;">{{ row.name }}</div>
+                        <div style="font-size:.72rem; color:#94a3b8; margin-top:2px;">{{ row.category }}</div>
+                    </td>
+                    <td>
+                        <span style="font-family:monospace; font-size:.78rem; color:#94a3b8;">{{ row.barcode|default:"-" }}</span>
+                    </td>
+                    <td>
+                        <span style="font-weight:600; color:#e2e8f0;">{{ currency_symbol }}{{ row.selling_price|floatformat:2 }}</span>
+                    </td>
+                    {% for b_stock in row.branch_qtys %}
+                    <td style="text-align:center;">
+                        {% if b_stock.quantity > 10 %}
+                        <span style="display:inline-block; padding:2px 8px; border-radius:6px; font-weight:700; font-size:.82rem; background:rgba(16,185,129,0.14); color:#34d399; border:1px solid rgba(16,185,129,0.3);">
+                            {{ b_stock.quantity|floatformat:0 }}
+                        </span>
+                        {% elif b_stock.quantity > 0 %}
+                        <span style="display:inline-block; padding:2px 8px; border-radius:6px; font-weight:700; font-size:.82rem; background:rgba(245,158,11,0.14); color:#fbbf24; border:1px solid rgba(245,158,11,0.3);">
+                            {{ b_stock.quantity|floatformat:0 }}
+                        </span>
+                        {% else %}
+                        <span style="display:inline-block; padding:2px 8px; border-radius:6px; font-weight:700; font-size:.82rem; background:rgba(244,63,94,0.12); color:#fb7185; border:1px solid rgba(244,63,94,0.25);">
+                            0
+                        </span>
+                        {% endif %}
+                    </td>
+                    {% endfor %}
+                    <td style="text-align:center;">
+                        {% if row.in_transit_qty > 0 %}
+                        <span style="color:#f59e0b; font-weight:700; font-size:.82rem; display:inline-flex; align-items:center; gap:4px;">
+                            <i class="fa-solid fa-truck" style="font-size:.7rem;"></i> +{{ row.in_transit_qty|floatformat:0 }}
+                        </span>
+                        {% else %}
+                        <span style="color:#64748b; font-size:.78rem;">-</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align:right;">
+                        <span style="font-weight:800; font-size:.95rem; color:#38bdf8;">
+                            {{ row.total_qty|floatformat:0 }}
+                        </span>
+                        <div style="font-size:.68rem; color:#64748b;">units total</div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="{{ branches|length|add:5 }}" style="text-align:center; padding:48px; color:#94a3b8;">
+                        <i class="fa-solid fa-boxes-stacked" style="font-size:2rem; margin-bottom:10px; opacity:.4;"></i>
+                        <p style="font-size:.9rem;">No inventory records match your criteria.</p>
+                        <p style="font-size:.78rem; color:#64748b;">Products and stock counts synchronize automatically from edge store LAN nodes.</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

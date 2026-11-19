@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clarity Retail — Clarity Community Suite by Avail Technologies</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        :root {
+            --bg-page: #0b1120;
+            --bg-surface: #0f172a;
+            --bg-card: #1e293b;
+            --bg-card-hover: #24344d;
+            --border-color: #334155;
+            --border-highlight: #475569;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --teal-500: #14b8a6;
+            --teal-600: #0d9488;
+            --teal-400: #2dd4bf;
+            --sky-400: #38bdf8;
+            --sky-500: #0ea5e9;
+            --indigo-400: #818cf8;
+            --amber-400: #fbbf24;
+            --emerald-400: #34d399;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html {
+            scroll-behavior: smooth;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-page);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Top Navigation Header - Always Sticky */
+        .header {
+            position: -webkit-sticky;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            background: rgba(15, 23, 42, 0.96);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border-color);
+            padding: 14px 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.5);
+        }
+        .brand-container {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            text-decoration: none;
+        }
+        .brand-badge {
+            background: linear-gradient(135deg, #0d9488, #14b8a6);
+            color: white;
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-weight: 800;
+            font-size: .85rem;
+            letter-spacing: .08em;
+        }
+        .brand-title {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: #f1f5f9;
+            letter-spacing: -0.02em;
+        }
+        .brand-sub {
+            font-size: .75rem;
+            color: var(--teal-400);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+        }
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .btn-nav-link {
+            color: #cbd5e1;
+            text-decoration: none;
+            font-size: .88rem;
+            font-weight: 500;
+            padding: 8px 14px;
+            border-radius: 8px;
+            transition: all .15s ease;
+        }
+        .btn-nav-link:hover {
+            color: #ffffff;
+            background: rgba(255,255,255,0.05);
+        }
+        .btn-primary {
+            background-color: var(--teal-600);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 9px 20px;
+            font-size: .88rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all .15s ease;
+            box-shadow: 0 4px 14px -2px rgba(13, 148, 136, 0.4);
+        }
+        .btn-primary:hover {
+            background-color: var(--teal-500);
+            transform: translateY(-1px);
+        }
+
+        /* Hero Section */
+        .hero {
+            padding: 80px 24px 60px;
+            text-align: center;
+            max-width: 980px;
+            margin: 0 auto;
+        }
+        .suite-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(20, 184, 166, 0.12);
+            border: 1px solid rgba(20, 184, 166, 0.35);
+            color: var(--teal-400);
+            font-size: .82rem;
+            font-weight: 700;
+            padding: 6px 16px;
+            border-radius: 20px;
+            margin-bottom: 24px;
+            letter-spacing: .03em;
+        }
+        .hero h1 {
+            font-size: 3.25rem;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            line-height: 1.15;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #ffffff 30%, #94a3b8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .hero h1 span {
+            color: var(--teal-400);
+            -webkit-text-fill-color: var(--teal-400);
+        }
+        .hero p {
+            font-size: 1.18rem;
+            color: var(--text-muted);
+            line-height: 1.65;
+            margin-bottom: 36px;
+            max-width: 780px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .hero-actions {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        .btn-large {
+            padding: 14px 32px;
+            font-size: 1rem;
+            border-radius: 10px;
+            font-weight: 700;
+        }
+        .btn-secondary {
+            background: #1e293b;
+            color: #e2e8f0;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 14px 28px;
+            font-size: 1rem;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            transition: all .15s ease;
+        }
+        .btn-secondary:hover {
+            border-color: #64748b;
+            background: #273549;
+            color: white;
+        }
+
+        /* Ecosystem Suite Section */
+        .section-container {
+            max-width: 1200px;
+            margin: 0 auto 70px;
+            padding: 0 24px;
+            width: 100%;
+        }
+        .section-title-wrap {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+        .section-pretitle {
+            font-size: .8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .1em;
+            color: var(--teal-500);
+            margin-bottom: 8px;
+        }
+        .section-title {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #f8fafc;
+            letter-spacing: -0.02em;
+        }
+        .section-subtitle {
+            color: var(--text-muted);
+            font-size: .95rem;
+            margin-top: 10px;
+            max-width: 650px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* 5 Suite Pillars Grid */
+        .suite-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+            gap: 24px;
+            margin-bottom: 60px;
+        }
+        .suite-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 30px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            transition: all .25s ease;
+        }
+        .suite-card:hover {
+            border-color: var(--teal-500);
+            transform: translateY(-4px);
+            box-shadow: 0 16px 32px -12px rgba(0,0,0,0.6);
+        }
+        .suite-card.featured {
+            border: 2px solid var(--teal-500);
+            background: linear-gradient(180deg, rgba(20,184,166,0.08) 0%, #1e293b 100%);
+        }
+        .suite-pill {
+            position: absolute;
+            top: -12px;
+            right: 24px;
+            background: linear-gradient(135deg, #0d9488, #14b8a6);
+            color: #fff;
+            font-size: .72rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            padding: 4px 12px;
+            border-radius: 20px;
+            letter-spacing: .06em;
+        }
+        .suite-icon {
+            width: 52px;
+            height: 52px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+        }
+        .suite-name {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: #f1f5f9;
+            margin-bottom: 6px;
+        }
+        .suite-role {
+            font-size: .8rem;
+            font-weight: 600;
+            margin-bottom: 14px;
+        }
+        .suite-desc {
+            font-size: .88rem;
+            color: var(--text-muted);
+            line-height: 1.6;
+            margin-bottom: 20px;
+            flex: 1;
+        }
+        .suite-features {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            font-size: .82rem;
+            color: #cbd5e1;
+            padding-top: 16px;
+            border-top: 1px solid var(--border-color);
+        }
+        .suite-features li {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .suite-features li i {
+            font-size: .75rem;
+        }
+
+        /* Architecture Flow Diagram */
+        .arch-diagram {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: 18px;
+            padding: 36px 28px;
+            margin-bottom: 60px;
+        }
+        .arch-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            position: relative;
+        }
+        .arch-step {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+        .arch-step-num {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--teal-600);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: .8rem;
+            font-weight: 800;
+            margin: 0 auto 12px;
+        }
+        .arch-step-title {
+            font-size: .95rem;
+            font-weight: 700;
+            color: #f1f5f9;
+            margin-bottom: 6px;
+        }
+        .arch-step-desc {
+            font-size: .78rem;
+            color: var(--text-muted);
+            line-height: 1.45;
+        }
+
+        /* Active Enterprises Grid */
+        .tenants-section {
+            background: var(--bg-surface);
+            border-radius: 18px;
+            border: 1px solid var(--border-color);
+            padding: 36px;
+            margin-bottom: 60px;
+        }
+        .tenants-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 18px;
+            margin-top: 24px;
+        }
+        .company-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 18px;
+            transition: all .15s ease;
+        }
+        .company-card:hover {
+            border-color: var(--teal-500);
+            transform: translateY(-2px);
+        }
+
+        /* Footer */
+        .footer {
+            margin-top: auto;
+            border-top: 1px solid var(--border-color);
+            background: var(--bg-surface);
+            padding: 36px 40px;
+            text-align: center;
+            font-size: .84rem;
+            color: #64748b;
+        }
+        .footer a {
+            color: var(--teal-400);
+            text-decoration: none;
+        }
+
+        /* ── Comprehensive Mobile Responsiveness ────────────────── */
+        @media (max-width: 900px) {
+            .header {
+                padding: 12px 20px;
+            }
+            .hero {
+                padding: 50px 20px 40px;
+            }
+            .hero h1 {
+                font-size: 2.35rem;
+            }
+            .hero p {
+                font-size: 1.05rem;
+            }
+            .suite-grid {
+                grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+                gap: 18px;
+            }
+            .section-container {
+                padding: 0 20px;
+                margin-bottom: 50px;
+            }
+        }
+
+        @media (max-width: 680px) {
+            .header {
+                padding: 10px 14px;
+            }
+            .brand-sub {
+                display: none;
+            }
+            .brand-title {
+                font-size: 1.05rem;
+            }
+            .nav-links .btn-nav-link {
+                display: none;
+            }
+            .btn-primary {
+                padding: 7px 14px;
+                font-size: .82rem;
+            }
+            .hero {
+                padding: 36px 14px 30px;
+            }
+            .suite-tag {
+                font-size: .72rem;
+                padding: 4px 12px;
+                margin-bottom: 16px;
+            }
+            .hero h1 {
+                font-size: 1.85rem;
+                letter-spacing: -0.02em;
+            }
+            .hero p {
+                font-size: .92rem;
+                margin-bottom: 24px;
+            }
+            .hero-actions {
+                display: flex;
+                flex-direction: row;
+                flex-wrap: wrap;
+                justify-content: center;
+                align-items: center;
+                gap: 10px;
+                margin-top: 16px;
+            }
+            .hero-actions .btn-primary,
+            .hero-actions .btn-large,
+            .hero-actions .btn-secondary {
+                width: auto !important;
+                min-width: 140px;
+                max-width: 90vw;
+                justify-content: center;
+                padding: 10px 20px;
+                font-size: .84rem;
+                border-radius: 99px;
+            }
+            .section-container {
+                padding: 0 14px;
+                margin-bottom: 40px;
+            }
+            .section-title {
+                font-size: 1.45rem;
+            }
+            .section-subtitle {
+                font-size: .85rem;
+            }
+            .suite-grid {
+                grid-template-columns: 1fr;
+            }
+            .suite-card {
+                padding: 22px 18px;
+            }
+            .arch-diagram {
+                padding: 24px 16px;
+            }
+            .arch-grid {
+                grid-template-columns: 1fr;
+            }
+            .tenants-section {
+                padding: 22px 16px;
+            }
+            .tenants-grid {
+                grid-template-columns: 1fr;
+            }
+            .footer {
+                padding: 24px 16px;
+                font-size: .78rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header Navigation -->
+    <header class="header">
+        <a href="/" class="brand-container">
+            <span class="brand-badge">CLARITY</span>
+            <div>
+                <div class="brand-title">Retail Cloud Hub</div>
+                <div class="brand-sub">Clarity Community Suite</div>
+            </div>
+        </a>
+
+        <div class="nav-links">
+            <a href="#how-it-works" class="btn-nav-link"><i class="fa-solid fa-circle-info mr-1"></i> How System Works</a>
+            <a href="#suite" class="btn-nav-link">Community Suite</a>
+            {% if request.user.is_authenticated %}
+            <a href="{% url 'workspaces_list' %}" class="btn-primary">
+                <i class="fa-solid fa-layer-group"></i> My Workspaces
+            </a>
+            {% else %}
+            <a href="{% url 'user_login' %}" class="btn-primary">
+                <i class="fa-solid fa-right-to-bracket"></i> Sign In to System
+            </a>
+            {% endif %}
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="suite-tag">
+            <i class="fa-solid fa-cube"></i> AVAIL TECHNOLOGIES CLARITY COMMUNITY SUITE
+        </div>
+        <h1>Unified Enterprise Retail &amp; <span>Cloud Chain Intelligence</span></h1>
+        <p>
+            Clarity Retail bridges offline-first store Point-of-Sale terminals with real-time multi-branch cloud analytics, cross-enterprise B2B replenishment, and logistics orchestration across the Clarity Community.
+        </p>
+
+        <div class="hero-actions">
+            {% if request.user.is_authenticated %}
+            <a href="{% url 'workspaces_list' %}" class="btn-primary btn-large">
+                <i class="fa-solid fa-layer-group"></i> Open My Workspaces
+            </a>
+            {% else %}
+            <a href="{% url 'user_login' %}" class="btn-primary btn-large">
+                <i class="fa-solid fa-right-to-bracket"></i> Proceed to Login
+            </a>
+            {% endif %}
+            <a href="#how-it-works" class="btn-secondary">
+                <i class="fa-solid fa-circle-question"></i> How the System Works
+            </a>
+        </div>
+    </section>
+
+    <!-- How The System Works: View Reports & Order Stock -->
+    <div id="how-it-works" class="section-container" style="margin-bottom: 50px;">
+        <div class="arch-diagram" style="margin-top:0;">
+            <div style="text-align: center; margin-bottom: 28px;">
+                <div style="font-size: .8rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--teal-500); margin-bottom: 6px;">
+                    What You Can Do
+                </div>
+                <h3 style="font-size: 1.65rem; font-weight: 800; color: #f1f5f9;">Chain Reports &amp; Stock Ordering</h3>
+                <p style="color: #94a3b8; font-size: .92rem; margin-top: 6px;">Everything you need to monitor store performance and replenish branch inventory</p>
+            </div>
+
+            <div class="arch-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));">
+                <div class="arch-step">
+                    <div class="arch-step-num"><i class="fa-solid fa-chart-line"></i></div>
+                    <div class="arch-step-title">View Consolidated Reports</div>
+                    <div class="arch-step-desc">Inspect multi-branch sales turnover, gross margins, inventory valuation, and cashier KPIs in real time across all physical stores.</div>
+                </div>
+
+                <div class="arch-step">
+                    <div class="arch-step-num"><i class="fa-solid fa-cart-flatbed"></i></div>
+                    <div class="arch-step-title">Order Stock from Central Nerve</div>
+                    <div class="arch-step-desc">Directly place B2B wholesale replenishment orders through the Clarity Exchange network, linking verified suppliers, manufacturers, and transporters.</div>
+                </div>
+            </div>
+            
+            <div style="text-align:center; margin-top:30px; padding-top:20px; border-top:1px solid rgba(51,65,85,0.6);">
+                <a href="{% url 'user_login' %}" class="btn-primary" style="padding:10px 24px; font-size:.9rem; border-radius:99px; display:inline-flex; width:auto; max-width:240px; justify-content:center;">
+                    <i class="fa-solid fa-right-to-bracket"></i> Sign In to System
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- The 5 Pillars of Clarity Community Suite -->
+    <div id="suite" class="section-container">
+        <div class="section-title-wrap">
+            <div class="section-pretitle">Unified Digital Supply Chain</div>
+            <h2 class="section-title">The Clarity Community Suite Ecosystem</h2>
+            <p class="section-subtitle">
+                Engineered by Avail Technologies to eliminate retail supply friction from checkout counters to wholesale depots and delivery fleets.
+            </p>
+        </div>
+
+        <div class="suite-grid">
+            {% for p in platforms %}
+            <div class="suite-card {% if p.is_current_platform %}featured{% endif %}">
+                {% if p.badge_label %}
+                <div class="suite-pill" style="{% if not p.is_current_platform %}background:#334155; color:#cbd5e1; border:1px solid #475569;{% endif %}">
+                    {{ p.badge_label }}
+                </div>
+                {% endif %}
+
+                <div class="suite-icon" style="background: rgba(255,255,255,0.06); color: {{ p.accent_color }};">
+                    <i class="{{ p.icon_class }}"></i>
+                </div>
+
+                <h3 class="suite-name">{{ p.name }}</h3>
+                <div class="suite-role" style="color: {{ p.accent_color }};">{{ p.role_title }}</div>
+                <p class="suite-desc">{{ p.description }}</p>
+
+                <ul class="suite-features" style="margin-bottom: 20px;">
+                    {% if p.feature_1 %}
+                    <li><i class="fa-solid fa-circle-check" style="color:{{ p.accent_color }};"></i> {{ p.feature_1 }}</li>
+                    {% endif %}
+                    {% if p.feature_2 %}
+                    <li><i class="fa-solid fa-circle-check" style="color:{{ p.accent_color }};"></i> {{ p.feature_2 }}</li>
+                    {% endif %}
+                    {% if p.feature_3 %}
+                    <li><i class="fa-solid fa-circle-check" style="color:{{ p.accent_color }};"></i> {{ p.feature_3 }}</li>
+                    {% endif %}
+                </ul>
+
+                <!-- Server Link Controlled in Admin -->
+                <div style="margin-top:auto; padding-top:14px; border-top:1px solid var(--border-color);">
+                    {% if p.is_current_platform %}
+                        {% if request.user.is_authenticated %}
+                        <a href="{% url 'workspaces_list' %}" class="btn-primary" style="width:100%; justify-content:center; text-align:center;">
+                            <i class="fa-solid fa-arrow-right-to-bracket"></i> {{ p.server_label|default:"Access Workspaces" }}
+                        </a>
+                        {% else %}
+                        <a href="{% url 'user_login' %}" class="btn-primary" style="width:100%; justify-content:center; text-align:center;">
+                            <i class="fa-solid fa-right-to-bracket"></i> Sign In to Workspaces
+                        </a>
+                        {% endif %}
+                    {% else %}
+                    <a href="{{ p.server_url }}" target="_blank" rel="noopener noreferrer" class="btn-secondary" style="width:100%; justify-content:center; text-align:center; padding:10px 14px; font-size:.88rem; border-color:var(--border-color);">
+                        <i class="fa-solid fa-arrow-up-right-from-square" style="color:{{ p.accent_color }};"></i>
+                        <span>{{ p.server_label|default:"Launch Platform Server" }}</span>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            {% empty %}
+            <div style="grid-column: 1/-1; text-align:center; padding:32px; color:#64748b;">
+                No community platform servers listed yet.
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div style="margin-bottom: 8px;">
+            <strong>Clarity Community Suite</strong> &bull; Crafted by <a href="#">Avail Technologies (Pvt) Ltd</a>
+        </div>
+        <div>
+            Clarity Retail LAN &bull; Clarity Retail Hub &bull; Clarity Wholesale &bull; Clarity Transporter &bull; Clarity Exchange
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,316 @@
+{% extends 'partials/base.html' %}
+{% block title %}B2B Exchange & Marketplace — {{ tenant.name }}{% endblock %}
+{% block nav_marketplace %}active{% endblock %}
+
+{% block content %}
+<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; flex-wrap:wrap; gap:16px;">
+    <div>
+        <h1 class="hub-title">Clarity B2B Marketplace & Exchange</h1>
+        <p class="hub-subtitle" style="margin-bottom:0;">Procurement discovery, wholesaler stock catalogs & automated replenishment</p>
+    </div>
+    <div style="display:flex; gap:10px;">
+        <button type="button" class="btn-hub-primary" onclick="openRequestModal()">
+            <i class="fa-solid fa-bullhorn"></i> Post Stock Request
+        </button>
+    </div>
+</div>
+
+<!-- ── Opt-in Status Banner ────────────────────────────────────────── -->
+<div class="hub-card" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:20px; border-left:4px solid {% if profile.is_opted_in %}#10b981{% else %}#f59e0b{% endif %};">
+    <div style="display:flex; align-items:center; gap:16px;">
+        <div style="width:52px; height:52px; border-radius:12px; background:{% if profile.is_opted_in %}rgba(16,185,129,0.15){% else %}rgba(245,158,11,0.15){% endif %}; display:flex; align-items:center; justify-content:center; color:{% if profile.is_opted_in %}#10b981{% else %}#f59e0b{% endif %}; font-size:1.5rem;">
+            <i class="fa-solid fa-handshake"></i>
+        </div>
+        <div>
+            <div style="display:flex; align-items:center; gap:10px;">
+                <h3 style="font-size:1.1rem; font-weight:700; color:#f1f5f9; margin:0;">
+                    Marketplace Status: 
+                    <span id="optin-status-text" style="color:{% if profile.is_opted_in %}#34d399{% else %}#fbbf24{% endif %};">
+                        {% if profile.is_opted_in %}Connected (Opted-in){% else %}Private ERP Mode{% endif %}
+                    </span>
+                </h3>
+            </div>
+            <p style="color:#94a3b8; font-size:.82rem; margin:4px 0 0;">
+                {% if profile.is_opted_in %}
+                    Your store is visible on Clarity Exchange. Wholesalers can quote on your purchase requests.
+                {% else %}
+                    Your system operates in strict standalone private mode. Wholesalers cannot discover your store.
+                {% endif %}
+            </p>
+        </div>
+    </div>
+
+    <div>
+        <button type="button" id="optin-toggle-btn" class="{% if profile.is_opted_in %}btn-hub-ghost{% else %}btn-hub-primary{% endif %}" onclick="toggleOptIn()" style="padding:10px 20px;">
+            {% if profile.is_opted_in %}
+                <i class="fa-solid fa-pause"></i> Pause Participation
+            {% else %}
+                <i class="fa-solid fa-bolt"></i> Enable B2B Exchange
+            {% endif %}
+        </button>
+    </div>
+</div>
+
+<!-- ── Quick Overview Metrics ──────────────────────────────────────── -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div>
+            <div class="stat-lbl">Active Procurement Requests</div>
+            <div class="stat-val" style="color:#38bdf8;">{{ open_requests_count }}</div>
+            <div style="font-size:.75rem; color:#94a3b8;">Awaiting supplier quotes</div>
+        </div>
+        <div class="stat-icon" style="background:rgba(56,189,248,0.12); color:#38bdf8;">
+            <i class="fa-solid fa-clipboard-question"></i>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div>
+            <div class="stat-lbl">Connected Wholesalers</div>
+            <div class="stat-val" style="color:#34d399;">Ready</div>
+            <div style="font-size:.75rem; color:#94a3b8;">Verified distributors on Exchange</div>
+        </div>
+        <div class="stat-icon" style="background:rgba(16,185,129,0.12); color:#10b981;">
+            <i class="fa-solid fa-truck-ramp-box"></i>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div>
+            <div class="stat-lbl">Settlement Method</div>
+            <div class="stat-val" style="font-size:1.15rem; color:#f1f5f9;">Offline B2B</div>
+            <div style="font-size:.75rem; color:#94a3b8;">Bank / Invoice / Cash settlement</div>
+        </div>
+        <div class="stat-icon" style="background:rgba(251,191,36,0.12); color:#fbbf24;">
+            <i class="fa-solid fa-receipt"></i>
+        </div>
+    </div>
+</div>
+
+<!-- ── Open Procurement Requests Table ──────────────────────────────── -->
+<div class="hub-card">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:18px;">
+        <div>
+            <h3 style="font-size:1.05rem; font-weight:700; color:#f1f5f9;">Active Procurement Stock Requests</h3>
+            <p style="font-size:.78rem; color:#94a3b8; margin-top:2px;">Goods and quantities broadcast to wholesalers on Clarity Exchange</p>
+        </div>
+        <button type="button" class="btn-hub-ghost" onclick="openRequestModal()" style="font-size:.78rem; padding:6px 12px;">
+            <i class="fa-solid fa-plus"></i> New Request
+        </button>
+    </div>
+
+    <div class="hub-table-container">
+        <table class="hub-table">
+            <thead>
+                <tr>
+                    <th>Ref #</th>
+                    <th>Requested Item</th>
+                    <th>Category</th>
+                    <th>Qty Needed</th>
+                    <th>Target Price</th>
+                    <th>Status</th>
+                    <th>Date Posted</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for req in stock_requests %}
+                <tr>
+                    <td style="font-family:monospace; font-weight:700; color:#38bdf8;">
+                        {{ req.reference }}
+                    </td>
+                    <td style="font-weight:600; color:#f1f5f9;">{{ req.item_name }}</td>
+                    <td style="color:#94a3b8;">{{ req.category }}</td>
+                    <td style="font-weight:700; color:#cbd5e1;">{{ req.quantity_needed }} units</td>
+                    <td style="color:#2dd4bf; font-weight:600;">
+                        {% if req.target_unit_price %}
+                            {{ currency_symbol }}{{ req.target_unit_price|floatformat:2 }}
+                        {% else %}
+                            <span style="color:#64748b;">Open offer</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if req.status == 'OPEN' %}
+                            <span class="badge-status active">Open for Quotes</span>
+                        {% elif req.status == 'FULFILLED' %}
+                            <span class="badge-status" style="background:rgba(59,130,246,0.15); color:#60a5fa; border:1px solid rgba(59,130,246,0.3);">Fulfilled</span>
+                        {% else %}
+                            <span class="badge-status offline">{{ req.status }}</span>
+                        {% endif %}
+                    </td>
+                    <td style="color:#94a3b8; font-size:.8rem;">{{ req.created_at|date:"d M Y" }}</td>
+                    <td>
+                        {% if req.status == 'OPEN' %}
+                        <button type="button" class="btn-hub-ghost" onclick="cancelRequest({{ req.id }})" style="padding:4px 8px; font-size:.75rem; color:#f87171; border-color:#7f1d1d;">
+                            Cancel
+                        </button>
+                        {% else %}
+                        <span style="color:#64748b; font-size:.75rem;">—</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" style="text-align:center; padding:36px; color:#64748b;">
+                        <i class="fa-solid fa-bullhorn" style="font-size:2rem; margin-bottom:12px; display:block; color:#475569;"></i>
+                        No procurement requests posted yet. Click <strong>Post Stock Request</strong> to broadcast your inventory requirements to verified wholesalers.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ── Post Request Modal ──────────────────────────────────────────── -->
+<div id="request-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:2000; align-items:center; justify-content:center; padding:20px;">
+    <div style="background:#1e293b; border:1px solid #334155; border-radius:14px; max-width:540px; width:100%; padding:28px; box-shadow:0 20px 25px -5px rgba(0,0,0,0.5);">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h3 style="font-size:1.15rem; font-weight:700; color:#f1f5f9; margin:0;">Post Stock Procurement Request</h3>
+            <button type="button" onclick="closeRequestModal()" style="background:none; border:none; color:#94a3b8; font-size:1.2rem; cursor:pointer;">&times;</button>
+        </div>
+
+        <form id="request-form" onsubmit="submitStockRequest(event)">
+            {% csrf_token %}
+            <div style="display:flex; flex-direction:column; gap:16px;">
+                <div>
+                    <label style="display:block; font-size:.78rem; font-weight:600; color:#94a3b8; margin-bottom:6px; text-transform:uppercase;">Item Name / Description *</label>
+                    <input type="text" name="item_name" required placeholder="e.g. White Sugar 2kg, Cooking Oil 2L" style="width:100%; background:#0f172a; border:1px solid #334155; border-radius:8px; padding:9px 12px; color:#f1f5f9; font-size:.85rem;">
+                </div>
+
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                    <div>
+                        <label style="display:block; font-size:.78rem; font-weight:600; color:#94a3b8; margin-bottom:6px; text-transform:uppercase;">Quantity Needed *</label>
+                        <input type="number" name="quantity_needed" value="100" min="1" required style="width:100%; background:#0f172a; border:1px solid #334155; border-radius:8px; padding:9px 12px; color:#f1f5f9; font-size:.85rem;">
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:.78rem; font-weight:600; color:#94a3b8; margin-bottom:6px; text-transform:uppercase;">Target Unit Price ({{ currency_symbol }})</label>
+                        <input type="number" step="0.01" name="target_unit_price" placeholder="Optional" style="width:100%; background:#0f172a; border:1px solid #334155; border-radius:8px; padding:9px 12px; color:#f1f5f9; font-size:.85rem;">
+                    </div>
+                </div>
+
+                <div>
+                    <label style="display:block; font-size:.78rem; font-weight:600; color:#94a3b8; margin-bottom:6px; text-transform:uppercase;">Preferred Delivery Location</label>
+                    <input type="text" name="preferred_location" placeholder="e.g. Harare Central Warehouse, Bulawayo Branch" style="width:100%; background:#0f172a; border:1px solid #334155; border-radius:8px; padding:9px 12px; color:#f1f5f9; font-size:.85rem;">
+                </div>
+
+                <div>
+                    <label style="display:block; font-size:.78rem; font-weight:600; color:#94a3b8; margin-bottom:6px; text-transform:uppercase;">Procurement Notes / Packaging Requirements</label>
+                    <textarea name="notes" rows="2" placeholder="e.g. Palletized only, expiry must exceed 12 months." style="width:100%; background:#0f172a; border:1px solid #334155; border-radius:8px; padding:9px 12px; color:#f1f5f9; font-size:.85rem; resize:none;"></textarea>
+                </div>
+
+                <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:10px;">
+                    <button type="button" class="btn-hub-ghost" onclick="closeRequestModal()">Cancel</button>
+                    <button type="submit" class="btn-hub-primary" id="submit-req-btn">Broadcast Request</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function toggleOptIn() {
+    const btn = document.getElementById('optin-toggle-btn');
+    btn.disabled = true;
+
+    fetch("{% url 'ajax_toggle_optin' %}", {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/x-www-form-urlencoded',
+        }
+    })
+    .then(r => r.json())
+    .then(data => {
+        btn.disabled = false;
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                icon: data.type || 'success',
+                title: data.title || 'Marketplace Updated',
+                text: data.message || '',
+                confirmButtonColor: '#0d9488',
+                background: '#1e293b',
+                color: '#f1f5f9'
+            }).then(() => location.reload());
+        } else {
+            alert(data.message);
+            location.reload();
+        }
+    })
+    .catch(err => {
+        btn.disabled = false;
+        alert('Network error: ' + err.message);
+    });
+}
+
+function openRequestModal() {
+    document.getElementById('request-modal').style.display = 'flex';
+}
+
+function closeRequestModal() {
+    document.getElementById('request-modal').style.display = 'none';
+}
+
+function submitStockRequest(e) {
+    e.preventDefault();
+    const btn = document.getElementById('submit-req-btn');
+    btn.disabled = true;
+    const form = document.getElementById('request-form');
+    const formData = new FormData(form);
+
+    fetch("{% url 'ajax_create_request' %}", {
+        method: 'POST',
+        body: formData
+    })
+    .then(r => r.json())
+    .then(data => {
+        btn.disabled = false;
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                icon: data.type || 'success',
+                title: data.title,
+                text: data.message,
+                confirmButtonColor: '#0d9488',
+                background: '#1e293b',
+                color: '#f1f5f9'
+            }).then(() => location.reload());
+        } else {
+            alert(data.message);
+            location.reload();
+        }
+    })
+    .catch(err => {
+        btn.disabled = false;
+        alert('Error: ' + err.message);
+    });
+}
+
+function cancelRequest(id) {
+    if (!confirm('Are you sure you want to cancel this procurement request?')) return;
+
+    fetch(`/marketplace/ajax/cancel-request/${id}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+        }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                icon: data.type || 'success',
+                title: data.title,
+                text: data.message,
+                confirmButtonColor: '#0d9488',
+                background: '#1e293b',
+                color: '#f1f5f9'
+            }).then(() => location.reload());
+        } else {
+            location.reload();
+        }
+    });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,144 @@
+{% extends 'partials/base.html' %}
+{% block title %}Stock Transfer Buffer Queue — {{ tenant_name }}{% endblock %}
+{% block nav_branches %}active{% endblock %}
+
+{% block content %}
+<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; flex-wrap:wrap; gap:16px;">
+    <div>
+        <div style="display:flex; align-items:center; gap:10px;">
+            <a href="{% url 'branches_page' %}" class="btn-hub-ghost" style="padding:4px 8px;" title="Back to Branches">
+                <i class="fa-solid fa-arrow-left"></i>
+            </a>
+            <h1 class="hub-title" style="margin-bottom:0;">Inter-Branch Stock Transfer Buffer</h1>
+        </div>
+        <p class="hub-subtitle" style="margin:4px 0 0 34px;">Asynchronous cloud relay buffer tracking inventory dispatches between store branches.</p>
+    </div>
+    <div style="display:flex; gap:10px; align-items:center;">
+        <a href="{% url 'stock_matrix' %}" class="btn-hub-primary">
+            <i class="fa-solid fa-table-cells"></i> Cross-Branch Stock Matrix
+        </a>
+    </div>
+</div>
+
+<!-- ── Buffer Overview KPIs ────────────────────────────────────────── -->
+<div class="metrics-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px; margin-bottom:20px;">
+    <div class="hub-card" style="border-left:4px solid #f59e0b; margin-bottom:0;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+                <div style="font-size:.74rem; font-weight:700; color:#94a3b8; text-transform:uppercase;">Currently In-Transit</div>
+                <div style="font-size:1.6rem; font-weight:800; color:#f59e0b; margin-top:4px;">{{ in_transit_count }}</div>
+            </div>
+            <div style="width:44px; height:44px; border-radius:10px; background:rgba(245,158,11,0.15); display:flex; align-items:center; justify-content:center; color:#f59e0b; font-size:1.3rem;">
+                <i class="fa-solid fa-truck-fast"></i>
+            </div>
+        </div>
+        <div style="font-size:.72rem; color:#64748b; margin-top:6px;">Stock decremented at source, awaiting physical delivery</div>
+    </div>
+
+    <div class="hub-card" style="border-left:4px solid #10b981; margin-bottom:0;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+                <div style="font-size:.74rem; font-weight:700; color:#94a3b8; text-transform:uppercase;">Completed Transfers</div>
+                <div style="font-size:1.6rem; font-weight:800; color:#10b981; margin-top:4px;">{{ received_count }}</div>
+            </div>
+            <div style="width:44px; height:44px; border-radius:10px; background:rgba(16,185,129,0.15); display:flex; align-items:center; justify-content:center; color:#10b981; font-size:1.3rem;">
+                <i class="fa-solid fa-box-open"></i>
+            </div>
+        </div>
+        <div style="font-size:.72rem; color:#64748b; margin-top:6px;">Successfully delivered & restocked at destination branch</div>
+    </div>
+</div>
+
+<!-- ── Buffer Queue Table ──────────────────────────────────────────── -->
+<div class="hub-card">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:18px;">
+        <h3 style="font-size:1.05rem; font-weight:700; color:#f1f5f9;">Active Transfer Relay Queue</h3>
+        <span style="font-size:.78rem; color:#94a3b8;">Buffered events ready for edge branch pull sync</span>
+    </div>
+
+    <div class="hub-table-container">
+        <table class="hub-table">
+            <thead>
+                <tr>
+                    <th>Transfer Ref</th>
+                    <th>Product Item</th>
+                    <th>Quantity</th>
+                    <th>Source Store</th>
+                    <th>Destination Store</th>
+                    <th>Status</th>
+                    <th>Dispatched</th>
+                    <th>Received</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in transfers %}
+                <tr>
+                    <td>
+                        <span style="font-family:monospace; font-weight:700; color:#38bdf8; background:#0f172a; border:1px solid #334155; padding:3px 8px; border-radius:4px; font-size:.82rem;">
+                            {{ t.reference }}
+                        </span>
+                    </td>
+                    <td>
+                        <div style="font-weight:700; color:#f8fafc; font-size:.88rem;">{{ t.product_name }}</div>
+                        {% if t.batch_number %}
+                        <div style="font-size:.74rem; color:#14b8a6; font-family:monospace; margin-top:2px;">
+                            Lot #{{ t.batch_number }}{% if t.expiry_date %} <span style="color:#f59e0b;">(Exp: {{ t.expiry_date|date:"d M Y" }})</span>{% endif %}
+                        </div>
+                        {% endif %}
+                        {% if t.notes %}
+                        <div style="font-size:.74rem; color:#94a3b8; margin-top:2px;">Note: {{ t.notes }}</div>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span style="font-weight:800; font-size:.95rem; color:#2dd4bf;">{{ t.quantity }}</span>
+                    </td>
+                    <td>
+                        <div style="font-weight:600; color:#e2e8f0; font-size:.84rem;">{{ t.source_branch.name }}</div>
+                        <div style="font-size:.72rem; color:#64748b; font-family:monospace;">{{ t.source_branch.branch_code }}</div>
+                    </td>
+                    <td>
+                        <div style="font-weight:600; color:#38bdf8; font-size:.84rem;">{{ t.destination_branch.name }}</div>
+                        <div style="font-size:.72rem; color:#64748b; font-family:monospace;">{{ t.destination_branch.branch_code }}</div>
+                    </td>
+                    <td>
+                        {% if t.status == 'IN_TRANSIT' %}
+                        <span class="badge-status pending" style="background:rgba(245,158,11,0.18); color:#f59e0b; border:1px solid rgba(245,158,11,0.3);">
+                            <i class="fa-solid fa-truck" style="font-size:.65rem;"></i> In Transit
+                        </span>
+                        {% elif t.status == 'RECEIVED' %}
+                        <span class="badge-status active">
+                            <i class="fa-solid fa-circle-check" style="font-size:.65rem;"></i> Received
+                        </span>
+                        {% else %}
+                        <span class="badge-status offline">
+                            <i class="fa-solid fa-xmark" style="font-size:.65rem;"></i> {{ t.status }}
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div style="font-size:.8rem; color:#cbd5e1;">{{ t.dispatched_at|date:"d M Y, H:i" }}</div>
+                        <div style="font-size:.7rem; color:#64748b;">By: {{ t.dispatched_by }}</div>
+                    </td>
+                    <td>
+                        {% if t.received_at %}
+                        <div style="font-size:.8rem; color:#10b981;">{{ t.received_at|date:"d M Y, H:i" }}</div>
+                        <div style="font-size:.7rem; color:#64748b;">By: {{ t.received_by|default:"Store Inbound" }}</div>
+                        {% else %}
+                        <span style="color:#64748b; font-size:.78rem;">Awaiting Delivery</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" style="text-align:center; padding:48px; color:#94a3b8;">
+                        <i class="fa-solid fa-truck-ramp-box" style="font-size:2rem; margin-bottom:10px; opacity:.4;"></i>
+                        <p style="font-size:.9rem;">No inter-branch transfers recorded yet in the cloud buffer.</p>
+                        <p style="font-size:.78rem; color:#64748b;">When stores dispatch transfers on their LAN POS, events buffer here until the receiving branch pulls and restocks.</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,331 @@
+{% extends 'partials/base.html' %}
+{% block title %}Team & Roles — {{ tenant.name }}{% endblock %}
+{% block nav_users %}active{% endblock %}
+
+{% block content %}
+<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; flex-wrap:wrap; gap:16px;">
+    <div>
+        <h1 class="hub-title">Team & User Roles</h1>
+        <p class="hub-subtitle" style="margin-bottom:0;">Universal 4-tier role hierarchy: Staff, Supervisor, Branch Manager, and Company Manager</p>
+    </div>
+    <div style="display:flex; gap:10px;">
+        <button type="button" class="btn-hub-primary" onclick="openUserModal()">
+            <i class="fa-solid fa-user-plus"></i> Add Team Member
+        </button>
+    </div>
+</div>
+
+<!-- ── Role Hierarchy Reference Cards ──────────────────────────────── -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div>
+            <div class="stat-lbl">Staff</div>
+            <div style="font-size:1.05rem; font-weight:700; color:#38bdf8; margin:4px 0 2px;">Store Operations</div>
+            <div style="font-size:.72rem; color:#94a3b8;">POS sales & receipt creation</div>
+        </div>
+        <div class="stat-icon" style="background:rgba(56,189,248,0.12); color:#38bdf8;">
+            <i class="fa-solid fa-cash-register"></i>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div>
+            <div class="stat-lbl">Supervisor</div>
+            <div style="font-size:1.05rem; font-weight:700; color:#34d399; margin:4px 0 2px;">Shift Oversight</div>
+            <div style="font-size:.72rem; color:#94a3b8;">Transaction approvals & shift end</div>
+        </div>
+        <div class="stat-icon" style="background:rgba(16,185,129,0.12); color:#10b981;">
+            <i class="fa-solid fa-user-check"></i>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div>
+            <div class="stat-lbl">Branch Manager</div>
+            <div style="font-size:1.05rem; font-weight:700; color:#fbbf24; margin:4px 0 2px;">Store Lead</div>
+            <div style="font-size:.72rem; color:#94a3b8;">Full branch control & inventory</div>
+        </div>
+        <div class="stat-icon" style="background:rgba(251,191,36,0.12); color:#fbbf24;">
+            <i class="fa-solid fa-user-tie"></i>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div>
+            <div class="stat-lbl">Company Manager</div>
+            <div style="font-size:1.05rem; font-weight:700; color:#a855f7; margin:4px 0 2px;">Executive (All Stores)</div>
+            <div style="font-size:.72rem; color:#94a3b8;">Cross-branch analytics & settings</div>
+        </div>
+        <div class="stat-icon" style="background:rgba(168,85,247,0.12); color:#a855f7;">
+            <i class="fa-solid fa-crown"></i>
+        </div>
+    </div>
+</div>
+
+<!-- ── Team Members Table ──────────────────────────────────────────── -->
+<div class="hub-card">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:18px;">
+        <div>
+            <h3 style="font-size:1.05rem; font-weight:700; color:#f1f5f9;">Active Team Members ({{ total_members }})</h3>
+            <p style="font-size:.78rem; color:#94a3b8; margin-top:2px;">Users provisioned within the {{ tenant.name }} tenant workspace</p>
+        </div>
+        <button type="button" class="btn-hub-ghost" onclick="openUserModal()" style="font-size:.78rem; padding:6px 12px;">
+            <i class="fa-solid fa-plus"></i> New User
+        </button>
+    </div>
+
+    <div class="hub-table-container">
+        <table class="hub-table">
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Full Name</th>
+                    <th>Email</th>
+                    <th>Assigned Role</th>
+                    <th>Branch Scope</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in users %}
+                <tr>
+                    <td style="font-family:monospace; font-weight:700; color:#38bdf8;">
+                        {{ u.username }}
+                    </td>
+                    <td style="font-weight:600; color:#f1f5f9;">
+                        {{ u.get_full_name|default:u.username }}
+                        <div style="font-size:.72rem; color:#64748b;">{{ u.hub_profile.job_title|default:"Associate" }}</div>
+                    </td>
+                    <td style="color:#94a3b8; font-size:.82rem;">{{ u.email|default:"No email set" }}</td>
+                    <td>
+                        {% if u.hub_profile.role == 'COMPANY_MANAGER' %}
+                            <span class="badge-status" style="background:rgba(168,85,247,0.15); color:#c084fc; border:1px solid rgba(168,85,247,0.3);">
+                                <i class="fa-solid fa-crown"></i> Company Manager
+                            </span>
+                        {% elif u.hub_profile.role == 'BRANCH_MANAGER' %}
+                            <span class="badge-status" style="background:rgba(251,191,36,0.15); color:#fcd34d; border:1px solid rgba(251,191,36,0.3);">
+                                <i class="fa-solid fa-user-tie"></i> Branch Manager
+                            </span>
+                        {% elif u.hub_profile.role == 'SUPERVISOR' %}
+                            <span class="badge-status" style="background:rgba(16,185,129,0.15); color:#6ee7b7; border:1px solid rgba(16,185,129,0.3);">
+                                <i class="fa-solid fa-user-check"></i> Supervisor
+                            </span>
+                        {% else %}
+                            <span class="badge-status" style="background:rgba(56,189,248,0.15); color:#7dd3fc; border:1px solid rgba(56,189,248,0.3);">
+                                <i class="fa-solid fa-user"></i> Staff
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if u.hub_profile.assigned_branch %}
+                            <span style="font-family:monospace; background:#0f172a; padding:2px 8px; border-radius:4px; font-size:.78rem; color:#cbd5e1; border:1px solid #334155;">
+                                {{ u.hub_profile.assigned_branch.branch_code }} - {{ u.hub_profile.assigned_branch.name }}
+                            </span>
+                        {% else %}
+                            <span style="color:#2dd4bf; font-weight:600; font-size:.8rem;">
+                                <i class="fa-solid fa-globe" style="margin-right:4px;"></i>All Branches
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if u.is_active %}
+                            <span class="badge-status active"><i class="fa-solid fa-circle-check"></i> Active</span>
+                        {% else %}
+                            <span class="badge-status offline">Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div style="display:flex; gap:6px;">
+                            <button type="button" class="btn-hub-ghost" onclick="editUser('{{ u.id }}', '{{ u.username }}', '{{ u.first_name }}', '{{ u.last_name }}', '{{ u.email }}', '{{ u.hub_profile.role }}', '{{ u.hub_profile.assigned_branch.id|default:'' }}', '{{ u.hub_profile.job_title|default:'' }}', '{{ u.hub_profile.phone|default:'' }}')" style="padding:4px 8px; font-size:.75rem;">
+                                Edit
+                            </button>
+                            {% if not u.is_superuser %}
+                            <button type="button" class="btn-hub-ghost" onclick="toggleUserStatus({{ u.id }})" style="padding:4px 8px; font-size:.75rem; color:{% if u.is_active %}#f87171{% else %}#34d399{% endif %};">
+                                {% if u.is_active %}Deactivate{% else %}Activate{% endif %}
+                            </button>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" style="text-align:center; padding:32px; color:#64748b;">No team members registered yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ── Add / Edit User Modal ───────────────────────────────────────── -->
+<div id="user-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:2000; align-items:center; justify-content:center; padding:20px;">
+    <div style="background:#1e293b; border:1px solid #334155; border-radius:14px; max-width:540px; width:100%; padding:28px; box-shadow:0 20px 25px -5px rgba(0,0,0,0.5);">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h3 id="modal-title" style="font-size:1.15rem; font-weight:700; color:#f1f5f9; margin:0;">Add Team Member</h3>
+            <button type="button" onclick="closeUserModal()" style="background:none; border:none; color:#94a3b8; font-size:1.2rem; cursor:pointer;">&times;</button>
+        </div>
+
+        <form id="user-form" onsubmit="saveUser(event)">
+            {% csrf_token %}
+            <input type="hidden" name="user_id" id="form-user-id">
+            <div style="display:flex; flex-direction:column; gap:16px;">
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                    <div>
+                        <label style="display:block; font-size:.78rem; font-weight:600; color:#94a3b8; margin-bottom:6px; text-transform:uppercase;">Username *</label>
+                        <input type="text" name="username" id="form-username" required style="width:100%; background:#0f172a; border:1px solid #334155; border-radius:8px; padding:9px 12px; color:#f1f5f9; font-size:.85rem;">
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:.78rem; font-weight:600; color:#94a3b8; margin-bottom:6px; text-transform:uppercase;">Email Address</label>
+                        <input type="email" name="email" id="form-email" style="width:100%; background:#0f172a; border:1px solid #334155; border-radius:8px; padding:9px 12px; color:#f1f5f9; font-size:.85rem;">
+                    </div>
+                </div>
+
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                    <div>
+                        <label style="display:block; font-size:.78rem; font-weight:600; color:#94a3b8; margin-bottom:6px; text-transform:uppercase;">First Name</label>
+                        <input type="text" name="first_name" id="form-first-name" style="width:100%; background:#0f172a; border:1px solid #334155; border-radius:8px; padding:9px 12px; color:#f1f5f9; font-size:.85rem;">
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:.78rem; font-weight:600; color:#94a3b8; margin-bottom:6px; text-transform:uppercase;">Last Name</label>
+                        <input type="text" name="last_name" id="form-last-name" style="width:100%; background:#0f172a; border:1px solid #334155; border-radius:8px; padding:9px 12px; color:#f1f5f9; font-size:.85rem;">
+                    </div>
+                </div>
+
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                    <div>
+                        <label style="display:block; font-size:.78rem; font-weight:600; color:#94a3b8; margin-bottom:6px; text-transform:uppercase;">Universal Role *</label>
+                        <select name="role" id="form-role" required style="width:100%; background:#0f172a; border:1px solid #334155; border-radius:8px; padding:9px 12px; color:#f1f5f9; font-size:.85rem;">
+                            <option value="STAFF">Staff (Operations)</option>
+                            <option value="SUPERVISOR">Supervisor (Oversight)</option>
+                            <option value="BRANCH_MANAGER">Branch Manager (Store Lead)</option>
+                            <option value="COMPANY_MANAGER">Company Manager (Executive)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:.78rem; font-weight:600; color:#94a3b8; margin-bottom:6px; text-transform:uppercase;">Assigned Store Branch</label>
+                        <select name="branch_id" id="form-branch-id" style="width:100%; background:#0f172a; border:1px solid #334155; border-radius:8px; padding:9px 12px; color:#f1f5f9; font-size:.85rem;">
+                            <option value="ALL">All Branches (Global Scope)</option>
+                            {% for b in branches %}
+                            <option value="{{ b.id }}">{{ b.branch_code }} - {{ b.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                    <div>
+                        <label style="display:block; font-size:.78rem; font-weight:600; color:#94a3b8; margin-bottom:6px; text-transform:uppercase;">Job Title</label>
+                        <input type="text" name="job_title" id="form-job-title" placeholder="e.g. Senior Cashier" style="width:100%; background:#0f172a; border:1px solid #334155; border-radius:8px; padding:9px 12px; color:#f1f5f9; font-size:.85rem;">
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:.78rem; font-weight:600; color:#94a3b8; margin-bottom:6px; text-transform:uppercase;">Password</label>
+                        <input type="password" name="password" id="form-password" placeholder="Leave blank to keep unchanged" style="width:100%; background:#0f172a; border:1px solid #334155; border-radius:8px; padding:9px 12px; color:#f1f5f9; font-size:.85rem;">
+                    </div>
+                </div>
+
+                <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:10px;">
+                    <button type="button" class="btn-hub-ghost" onclick="closeUserModal()">Cancel</button>
+                    <button type="submit" class="btn-hub-primary" id="save-user-btn">Save Member</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function openUserModal() {
+    document.getElementById('modal-title').textContent = 'Add Team Member';
+    document.getElementById('form-user-id').value = '';
+    document.getElementById('form-username').value = '';
+    document.getElementById('form-username').disabled = false;
+    document.getElementById('form-first-name').value = '';
+    document.getElementById('form-last-name').value = '';
+    document.getElementById('form-email').value = '';
+    document.getElementById('form-role').value = 'STAFF';
+    document.getElementById('form-branch-id').value = 'ALL';
+    document.getElementById('form-job-title').value = 'Retail Associate';
+    document.getElementById('form-password').value = '';
+    document.getElementById('user-modal').style.display = 'flex';
+}
+
+function editUser(id, username, first, last, email, role, branchId, jobTitle, phone) {
+    document.getElementById('modal-title').textContent = `Edit Member: ${username}`;
+    document.getElementById('form-user-id').value = id;
+    document.getElementById('form-username').value = username;
+    document.getElementById('form-username').disabled = true;
+    document.getElementById('form-first-name').value = first;
+    document.getElementById('form-last-name').value = last;
+    document.getElementById('form-email').value = email;
+    document.getElementById('form-role').value = role || 'STAFF';
+    document.getElementById('form-branch-id').value = branchId || 'ALL';
+    document.getElementById('form-job-title').value = jobTitle || '';
+    document.getElementById('form-password').value = '';
+    document.getElementById('user-modal').style.display = 'flex';
+}
+
+function closeUserModal() {
+    document.getElementById('user-modal').style.display = 'none';
+}
+
+function saveUser(e) {
+    e.preventDefault();
+    const btn = document.getElementById('save-user-btn');
+    btn.disabled = true;
+    const form = document.getElementById('user-form');
+    const formData = new FormData(form);
+
+    fetch("{% url 'ajax_save_user' %}", {
+        method: 'POST',
+        body: formData
+    })
+    .then(r => r.json())
+    .then(data => {
+        btn.disabled = false;
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                icon: data.type || 'success',
+                title: data.title,
+                text: data.message,
+                confirmButtonColor: '#0d9488',
+                background: '#1e293b',
+                color: '#f1f5f9'
+            }).then(() => location.reload());
+        } else {
+            alert(data.message);
+            location.reload();
+        }
+    })
+    .catch(err => {
+        btn.disabled = false;
+        alert('Error: ' + err.message);
+    });
+}
+
+function toggleUserStatus(userId) {
+    fetch(`/accounts/ajax/toggle/${userId}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+        }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                icon: data.type || 'success',
+                title: data.title,
+                text: data.message,
+                confirmButtonColor: '#0d9488',
+                background: '#1e293b',
+                color: '#f1f5f9'
+            }).then(() => location.reload());
+        } else {
+            location.reload();
+        }
+    });
+}
+</script>
+{% endblock %}

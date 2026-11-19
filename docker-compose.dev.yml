@@ -1,0 +1,54 @@
+# docker-compose.dev.yml — clarity-retail-hub
+# Multi-tenant cloud platform for retail companies
+
+services:
+
+  db:
+    image: postgres:13
+    container_name: dev-retail-hub-postgres
+    environment:
+      POSTGRES_DB: dev_retail_hub
+      POSTGRES_USER: dev_user
+      POSTGRES_PASSWORD: dev_password
+    ports:
+      - "5435:5432"
+    volumes:
+      - dev_retail_hub_postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dev_user -d dev_retail_hub"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: dev-retail-hub-app
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "${PORT:-8003}:8000"
+    environment:
+      DJANGO_SETTINGS_MODULE: retail_hub.settings_dev_docker
+      DEBUG: "True"
+      SECRET_KEY: dev-secret-key-retail-hub-12345
+      DB_NAME: dev_retail_hub
+      DB_USER: dev_user
+      DB_PASSWORD: dev_password
+      DB_HOST: db
+      DB_PORT: "5432"
+      PLATFORM_PORT: "${PORT:-8003}"
+      PLATFORM_DOMAIN: "${PLATFORM_DOMAIN:-localhost}"
+    volumes:
+      - .:/app
+      - /app/__pycache__
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    command: python manage.py runserver 0.0.0.0:8000
+
+volumes:
+  dev_retail_hub_postgres_data:

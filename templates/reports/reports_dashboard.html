@@ -1,0 +1,592 @@
+{% extends 'partials/base.html' %}
+{% block title %}Reports & Analytics — {{ tenant.name }}{% endblock %}
+{% block nav_reports %}active{% endblock %}
+
+{% block extra_head %}
+<style>
+    .report-tabs {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        border-bottom: 1px solid var(--border-color);
+        margin-bottom: 24px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 2px;
+    }
+    .report-tab-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 18px;
+        font-size: .88rem;
+        font-weight: 600;
+        color: var(--text-muted);
+        text-decoration: none;
+        border-bottom: 2px solid transparent;
+        white-space: nowrap;
+        transition: all .15s ease;
+    }
+    .report-tab-btn:hover {
+        color: var(--text-main);
+        background: rgba(30, 41, 59, 0.4);
+        border-radius: 6px 6px 0 0;
+    }
+    .report-tab-btn.active {
+        color: var(--teal-500);
+        border-bottom-color: var(--teal-500);
+        background: rgba(20, 184, 166, 0.08);
+        border-radius: 6px 6px 0 0;
+    }
+
+    .filter-box {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 16px 20px;
+        margin-bottom: 24px;
+    }
+    .filter-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 12px;
+        align-items: flex-end;
+    }
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+    .filter-label {
+        font-size: .72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        letter-spacing: .04em;
+    }
+    .filter-input, .filter-select {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        color: var(--text-main);
+        padding: 8px 12px;
+        font-size: .84rem;
+        outline: none;
+        transition: border-color .15s ease;
+        width: 100%;
+    }
+    .filter-input:focus, .filter-select:focus {
+        border-color: var(--teal-500);
+    }
+
+    @media (max-width: 640px) {
+        .report-tabs {
+            margin-bottom: 16px;
+            gap: 4px;
+        }
+        .report-tab-btn {
+            padding: 8px 12px;
+            font-size: .8rem;
+        }
+        .filter-box {
+            padding: 14px;
+        }
+        .filter-box form {
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 12px !important;
+        }
+        .filter-group {
+            width: 100% !important;
+            min-width: 100% !important;
+        }
+        .filter-input, .filter-select {
+            width: 100% !important;
+            font-size: 16px;
+        }
+        .filter-box button[type="submit"] {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- ── Page Header ─────────────────────────────────────────────────── -->
+<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; gap:16px;">
+    <div>
+        <h1 class="hub-title" style="display:flex; align-items:center; gap:10px; margin-bottom:4px;">
+            {% if active_tab == 'daily' %}
+                <i class="fa-solid fa-calendar-day" style="color:var(--teal-500); font-size:1.4rem;"></i>
+                <span>Daily Report & Cash Flow — {{ period_label }}</span>
+            {% elif active_tab == 'weekly' %}
+                <i class="fa-solid fa-calendar-week" style="color:var(--teal-500); font-size:1.4rem;"></i>
+                <span>Weekly Operational Rollup — {{ period_label }}</span>
+            {% elif active_tab == 'monthly' %}
+                <i class="fa-solid fa-calendar-days" style="color:var(--teal-500); font-size:1.4rem;"></i>
+                <span>Monthly Ledger & Financials — {{ period_label }}</span>
+            {% elif active_tab == 'annual' %}
+                <i class="fa-solid fa-chart-line" style="color:var(--teal-500); font-size:1.4rem;"></i>
+                <span>Annual Audit & Performance — {{ period_label }}</span>
+            {% elif active_tab == 'stock' %}
+                <i class="fa-solid fa-boxes-stacked" style="color:var(--teal-500); font-size:1.4rem;"></i>
+                <span>Inventory Valuation & Low Stock</span>
+            {% endif %}
+        </h1>
+        <p class="hub-subtitle" style="margin-bottom:0;">
+            {% if selected_branch %}
+                <i class="fa-solid fa-store" style="color:#2dd4bf; margin-right:4px;"></i> Store Scope: <b>{{ selected_branch.name }}</b> [{{ selected_branch.branch_code }}]
+            {% else %}
+                <i class="fa-solid fa-network-wired" style="color:#38bdf8; margin-right:4px;"></i> Combined Chain View (All Active Branches)
+            {% endif %}
+        </p>
+    </div>
+    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+        <a href="{% url 'stock_matrix' %}" class="btn-hub-ghost" style="border-color:#0d9488; color:#2dd4bf;">
+            <i class="fa-solid fa-table-cells"></i> Cross-Branch Stock Matrix
+        </a>
+        {% if active_tab == 'daily' %}
+        <a href="{% url 'export_daily_csv' %}?date={{ target_date }}" class="btn-hub-primary">
+            <i class="fa-solid fa-file-csv"></i> Export Daily CSV
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<!-- ── Navigation Tab Bar ──────────────────────────────────────────── -->
+<div class="report-tabs">
+    <a href="?tab=daily&branch={{ active_branch_id|default:'' }}" class="report-tab-btn {% if active_tab == 'daily' %}active{% endif %}">
+        <i class="fa-solid fa-calendar-day"></i> Daily Report
+    </a>
+    <a href="?tab=weekly&branch={{ active_branch_id|default:'' }}" class="report-tab-btn {% if active_tab == 'weekly' %}active{% endif %}">
+        <i class="fa-solid fa-calendar-week"></i> Weekly Report
+    </a>
+    <a href="?tab=monthly&branch={{ active_branch_id|default:'' }}" class="report-tab-btn {% if active_tab == 'monthly' %}active{% endif %}">
+        <i class="fa-solid fa-calendar-days"></i> Monthly Report
+    </a>
+    <a href="?tab=annual&branch={{ active_branch_id|default:'' }}" class="report-tab-btn {% if active_tab == 'annual' %}active{% endif %}">
+        <i class="fa-solid fa-chart-line"></i> Annual Report
+    </a>
+    <a href="?tab=stock&branch={{ active_branch_id|default:'' }}" class="report-tab-btn {% if active_tab == 'stock' %}active{% endif %}">
+        <i class="fa-solid fa-boxes-stacked"></i> Stock & Valuation
+    </a>
+</div>
+
+<!-- ── Timeframe & Branch Filter Form ──────────────────────────────── -->
+<div class="filter-box">
+    <form method="GET" action="" style="display:flex; gap:14px; align-items:flex-end; flex-wrap:wrap;">
+        <input type="hidden" name="tab" value="{{ active_tab }}">
+
+        <!-- Store Branch Selector -->
+        <div class="filter-group" style="min-width:200px;">
+            <label class="filter-label">Branch Store Scope</label>
+            <select name="branch" class="filter-select">
+                <option value="ALL" {% if not active_branch_id or active_branch_id == 'ALL' %}selected{% endif %}>All Branches (Combined Chain)</option>
+                {% for b in branches %}
+                <option value="{{ b.id }}" {% if active_branch_id == b.id|stringformat:"s" %}selected{% endif %}>
+                    {{ b.name }} ({{ b.branch_code }}){% if b.is_main_branch %} [Main]{% endif %}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        {% if active_tab == 'daily' %}
+        <div class="filter-group">
+            <label class="filter-label">Select Date</label>
+            <input type="date" name="date" value="{{ target_date }}" class="filter-input">
+        </div>
+        {% elif active_tab == 'weekly' %}
+        <div class="filter-group">
+            <label class="filter-label">Week Containing Date</label>
+            <input type="date" name="date" value="{{ target_date }}" class="filter-input">
+        </div>
+        <div style="display:flex; gap:6px;">
+            <a href="?tab=weekly&branch={{ active_branch_id|default:'' }}&date={{ prev_week_date }}" class="btn-hub-ghost" title="Previous Week" style="height:38px; padding:0 12px; display:inline-flex; align-items:center;">
+                <i class="fa-solid fa-chevron-left"></i>
+            </a>
+            <a href="?tab=weekly&branch={{ active_branch_id|default:'' }}&date={{ next_week_date }}" class="btn-hub-ghost" title="Next Week" style="height:38px; padding:0 12px; display:inline-flex; align-items:center;">
+                <i class="fa-solid fa-chevron-right"></i>
+            </a>
+        </div>
+        {% elif active_tab == 'monthly' %}
+        <div class="filter-group">
+            <label class="filter-label">Select Month</label>
+            <select name="month" class="filter-select">
+                <option value="1" {% if target_month == 1 %}selected{% endif %}>January</option>
+                <option value="2" {% if target_month == 2 %}selected{% endif %}>February</option>
+                <option value="3" {% if target_month == 3 %}selected{% endif %}>March</option>
+                <option value="4" {% if target_month == 4 %}selected{% endif %}>April</option>
+                <option value="5" {% if target_month == 5 %}selected{% endif %}>May</option>
+                <option value="6" {% if target_month == 6 %}selected{% endif %}>June</option>
+                <option value="7" {% if target_month == 7 %}selected{% endif %}>July</option>
+                <option value="8" {% if target_month == 8 %}selected{% endif %}>August</option>
+                <option value="9" {% if target_month == 9 %}selected{% endif %}>September</option>
+                <option value="10" {% if target_month == 10 %}selected{% endif %}>October</option>
+                <option value="11" {% if target_month == 11 %}selected{% endif %}>November</option>
+                <option value="12" {% if target_month == 12 %}selected{% endif %}>December</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label class="filter-label">Select Year</label>
+            <input type="number" name="year" value="{{ target_year }}" class="filter-input" style="width:110px;">
+        </div>
+        {% elif active_tab == 'annual' %}
+        <div class="filter-group">
+            <label class="filter-label">Select Year</label>
+            <input type="number" name="year" value="{{ annual_year }}" class="filter-input" style="width:120px;">
+        </div>
+        {% endif %}
+
+        <button type="submit" class="btn-hub-primary" style="height:38px;">
+            <i class="fa-solid fa-arrows-rotate"></i> Load Report
+        </button>
+    </form>
+</div>
+
+<!-- ================================================================== -->
+<!-- TAB: WEEKLY REPORT VIEW (DYNAMICALLY CALCULATED ON DEMAND)        -->
+<!-- ================================================================== -->
+{% if active_tab == 'weekly' %}
+<div class="metrics-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(210px, 1fr)); gap:16px; margin-bottom:24px;">
+    <div class="hub-card" style="border-left:4px solid #10b981; margin-bottom:0;">
+        <div style="font-size:.74rem; font-weight:700; color:#94a3b8; text-transform:uppercase;">Weekly Gross Revenue</div>
+        <div style="font-size:1.6rem; font-weight:800; color:#10b981; margin-top:4px;">{{ currency_symbol }}{{ weekly_gross|floatformat:2 }}</div>
+        <div style="font-size:.72rem; color:#64748b; margin-top:4px;">{{ weekly_sales_count }} Total Invoices</div>
+    </div>
+    <div class="hub-card" style="border-left:4px solid #f43f5e; margin-bottom:0;">
+        <div style="font-size:.74rem; font-weight:700; color:#94a3b8; text-transform:uppercase;">Weekly Total Expenses</div>
+        <div style="font-size:1.6rem; font-weight:800; color:#f43f5e; margin-top:4px;">{{ currency_symbol }}{{ weekly_expenses_total|floatformat:2 }}</div>
+        <div style="font-size:.72rem; color:#64748b; margin-top:4px;">Aggregated Petty Cash Outflows</div>
+    </div>
+    <div class="hub-card" style="border-left:4px solid #38bdf8; margin-bottom:0;">
+        <div style="font-size:.74rem; font-weight:700; color:#94a3b8; text-transform:uppercase;">Weekly Net Margin</div>
+        <div style="font-size:1.6rem; font-weight:800; color:{% if weekly_net_profit >= 0 %}#38bdf8{% else %}#f43f5e{% endif %}; margin-top:4px;">
+            {{ currency_symbol }}{{ weekly_net_profit|floatformat:2 }}
+        </div>
+        <div style="font-size:.72rem; color:#64748b; margin-top:4px;">Calculated on Demand</div>
+    </div>
+    <div class="hub-card" style="border-left:4px solid #a855f7; margin-bottom:0;">
+        <div style="font-size:.74rem; font-weight:700; color:#94a3b8; text-transform:uppercase;">Weekly VAT Liability</div>
+        <div style="font-size:1.6rem; font-weight:800; color:#c084fc; margin-top:4px;">{{ currency_symbol }}{{ weekly_vat|floatformat:2 }}</div>
+        <div style="font-size:.72rem; color:#64748b; margin-top:4px;">Tax Liability Across 7 Days</div>
+    </div>
+</div>
+
+<div class="hub-card">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <h3 style="font-size:1.05rem; font-weight:700; color:#f1f5f9; margin-bottom:0;">7-Day Operational Breakdown — {{ period_label }}</h3>
+        <span style="font-size:.8rem; color:#94a3b8;"><i class="fa-solid fa-calculator" style="color:#2dd4bf; margin-right:4px;"></i> Dynamically Aggregated</span>
+    </div>
+    <div class="hub-table-container">
+        <table class="hub-table">
+            <thead>
+                <tr>
+                    <th>Day</th>
+                    <th>Date</th>
+                    <th>Invoices Count</th>
+                    <th style="text-align:right;">Gross Sales</th>
+                    <th style="text-align:right;">VAT Component</th>
+                    <th style="text-align:right;">Store Expenses</th>
+                    <th style="text-align:right;">Daily Net Margin</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for d in weekly_days %}
+                <tr>
+                    <td style="font-weight:700; color:#f8fafc;">{{ d.day_name }}</td>
+                    <td style="font-family:monospace; color:#94a3b8; font-size:.84rem;">{{ d.date }}</td>
+                    <td style="color:#cbd5e1;">{{ d.sales_count }}</td>
+                    <td style="text-align:right; font-weight:700; color:#10b981;">{{ currency_symbol }}{{ d.gross|floatformat:2 }}</td>
+                    <td style="text-align:right; color:#94a3b8;">{{ currency_symbol }}{{ d.vat|floatformat:2 }}</td>
+                    <td style="text-align:right; color:#f43f5e;">{{ currency_symbol }}{{ d.expenses|floatformat:2 }}</td>
+                    <td style="text-align:right; font-weight:800; color:{% if d.net >= 0 %}#38bdf8{% else %}#f43f5e{% endif %};">
+                        {{ currency_symbol }}{{ d.net|floatformat:2 }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<!-- ================================================================== -->
+<!-- TAB 1: DAILY REPORT VIEW                                          -->
+<!-- ================================================================== -->
+{% if active_tab == 'daily' %}
+<!-- Financial Summary KPIs -->
+<div class="metrics-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(210px, 1fr)); gap:16px; margin-bottom:24px;">
+    <div class="hub-card" style="border-left:4px solid #10b981; margin-bottom:0;">
+        <div style="font-size:.74rem; font-weight:700; color:#94a3b8; text-transform:uppercase;">Daily Gross Revenue</div>
+        <div style="font-size:1.6rem; font-weight:800; color:#10b981; margin-top:4px;">{{ currency_symbol }}{{ daily_gross|floatformat:2 }}</div>
+        <div style="font-size:.72rem; color:#64748b; margin-top:4px;">{{ daily_sales_count }} Receipts Processed</div>
+    </div>
+
+    <div class="hub-card" style="border-left:4px solid #f43f5e; margin-bottom:0;">
+        <div style="font-size:.74rem; font-weight:700; color:#94a3b8; text-transform:uppercase;">Daily Store Expenses</div>
+        <div style="font-size:1.6rem; font-weight:800; color:#f43f5e; margin-top:4px;">{{ currency_symbol }}{{ daily_expenses_total|floatformat:2 }}</div>
+        <div style="font-size:.72rem; color:#64748b; margin-top:4px;">Petty Cash & Store Outflows</div>
+    </div>
+
+    <div class="hub-card" style="border-left:4px solid #38bdf8; margin-bottom:0;">
+        <div style="font-size:.74rem; font-weight:700; color:#94a3b8; text-transform:uppercase;">Daily Net Cash Flow</div>
+        <div style="font-size:1.6rem; font-weight:800; color:{% if daily_net_cashflow >= 0 %}#38bdf8{% else %}#f43f5e{% endif %}; margin-top:4px;">
+            {{ currency_symbol }}{{ daily_net_cashflow|floatformat:2 }}
+        </div>
+        <div style="font-size:.72rem; color:#64748b; margin-top:4px;">Gross Revenue minus Expenses</div>
+    </div>
+
+    <div class="hub-card" style="border-left:4px solid #a855f7; margin-bottom:0;">
+        <div style="font-size:.74rem; font-weight:700; color:#94a3b8; text-transform:uppercase;">VAT Liability</div>
+        <div style="font-size:1.6rem; font-weight:800; color:#c084fc; margin-top:4px;">{{ currency_symbol }}{{ daily_vat|floatformat:2 }}</div>
+        <div style="font-size:.72rem; color:#64748b; margin-top:4px;">Calculated Tax Component</div>
+    </div>
+</div>
+
+<!-- Daily Sales Breakdown Table -->
+<div class="hub-card">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <h3 style="font-size:1.05rem; font-weight:700; color:#f1f5f9;">Today's Invoices & Receipts ({{ daily_sales_count }})</h3>
+        <span style="font-size:.78rem; color:#94a3b8;">{{ target_date }}</span>
+    </div>
+
+    <div class="hub-table-container">
+        <table class="hub-table">
+            <thead>
+                <tr>
+                    <th>Time</th>
+                    <th>Receipt Reference</th>
+                    <th>Store Branch</th>
+                    <th>Cashier</th>
+                    <th>Fiscalised</th>
+                    <th style="text-align:right;">VAT</th>
+                    <th style="text-align:right;">Total Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in daily_sales %}
+                <tr>
+                    <td style="font-family:monospace; color:#94a3b8; font-size:.8rem;">{{ s.time }}</td>
+                    <td style="font-weight:700; color:#38bdf8; font-family:monospace;">{{ s.reference }}</td>
+                    <td>
+                        <span style="font-size:.8rem; background:#0f172a; border:1px solid #334155; padding:2px 6px; border-radius:4px; color:#cbd5e1;">
+                            {{ s.branch_code }}
+                        </span>
+                    </td>
+                    <td style="color:#e2e8f0;">{{ s.cashier }}</td>
+                    <td>
+                        {% if s.is_fiscal %}
+                        <span style="color:#10b981; font-size:.74rem; font-weight:700;"><i class="fa-solid fa-circle-check"></i> Fiscal</span>
+                        {% else %}
+                        <span style="color:#64748b; font-size:.74rem;">Standard</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align:right; color:#94a3b8;">{{ currency_symbol }}{{ s.vat|floatformat:2 }}</td>
+                    <td style="text-align:right; font-weight:800; color:#f8fafc;">{{ currency_symbol }}{{ s.total|floatformat:2 }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" style="text-align:center; padding:36px; color:#94a3b8;">
+                        <i class="fa-solid fa-receipt" style="font-size:1.8rem; margin-bottom:8px; opacity:.4;"></i>
+                        <p style="font-size:.88rem;">No sales receipts recorded for {{ target_date }}.</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<!-- ================================================================== -->
+<!-- TAB 2: MONTHLY REPORT VIEW                                        -->
+<!-- ================================================================== -->
+{% if active_tab == 'monthly' %}
+<div class="metrics-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(210px, 1fr)); gap:16px; margin-bottom:24px;">
+    <div class="hub-card" style="border-left:4px solid #10b981; margin-bottom:0;">
+        <div style="font-size:.74rem; font-weight:700; color:#94a3b8; text-transform:uppercase;">Month Gross Revenue</div>
+        <div style="font-size:1.6rem; font-weight:800; color:#10b981; margin-top:4px;">{{ currency_symbol }}{{ monthly_gross|floatformat:2 }}</div>
+    </div>
+    <div class="hub-card" style="border-left:4px solid #f43f5e; margin-bottom:0;">
+        <div style="font-size:.74rem; font-weight:700; color:#94a3b8; text-transform:uppercase;">Month Total Expenses</div>
+        <div style="font-size:1.6rem; font-weight:800; color:#f43f5e; margin-top:4px;">{{ currency_symbol }}{{ monthly_expenses_total|floatformat:2 }}</div>
+    </div>
+    <div class="hub-card" style="border-left:4px solid #38bdf8; margin-bottom:0;">
+        <div style="font-size:.74rem; font-weight:700; color:#94a3b8; text-transform:uppercase;">Net Operating Margin</div>
+        <div style="font-size:1.6rem; font-weight:800; color:#38bdf8; margin-top:4px;">{{ currency_symbol }}{{ monthly_net_profit|floatformat:2 }}</div>
+    </div>
+    <div class="hub-card" style="border-left:4px solid #a855f7; margin-bottom:0;">
+        <div style="font-size:.74rem; font-weight:700; color:#94a3b8; text-transform:uppercase;">Month VAT Component</div>
+        <div style="font-size:1.6rem; font-weight:800; color:#c084fc; margin-top:4px;">{{ currency_symbol }}{{ monthly_vat|floatformat:2 }}</div>
+    </div>
+</div>
+
+<div class="hub-card">
+    <h3 style="font-size:1.05rem; font-weight:700; color:#f1f5f9; margin-bottom:16px;">Daily Financial Trend — {{ period_label }}</h3>
+    <div class="hub-table-container">
+        <table class="hub-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Invoices Count</th>
+                    <th style="text-align:right;">Gross Sales</th>
+                    <th style="text-align:right;">VAT Component</th>
+                    <th style="text-align:right;">Store Expenses</th>
+                    <th style="text-align:right;">Daily Net</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for d in monthly_days %}
+                <tr>
+                    <td style="font-weight:700; color:#f8fafc;">{{ d.date }}</td>
+                    <td style="color:#cbd5e1;">{{ d.sales_count }}</td>
+                    <td style="text-align:right; font-weight:700; color:#10b981;">{{ currency_symbol }}{{ d.gross|floatformat:2 }}</td>
+                    <td style="text-align:right; color:#94a3b8;">{{ currency_symbol }}{{ d.vat|floatformat:2 }}</td>
+                    <td style="text-align:right; color:#f43f5e;">{{ currency_symbol }}{{ d.expenses|floatformat:2 }}</td>
+                    <td style="text-align:right; font-weight:800; color:{% if d.net >= 0 %}#38bdf8{% else %}#f43f5e{% endif %};">
+                        {{ currency_symbol }}{{ d.net|floatformat:2 }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<!-- ================================================================== -->
+<!-- TAB 3: ANNUAL REPORT VIEW                                         -->
+<!-- ================================================================== -->
+{% if active_tab == 'annual' %}
+<div class="metrics-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(210px, 1fr)); gap:16px; margin-bottom:24px;">
+    <div class="hub-card" style="border-left:4px solid #10b981; margin-bottom:0;">
+        <div style="font-size:.74rem; font-weight:700; color:#94a3b8; text-transform:uppercase;">Annual Gross Sales</div>
+        <div style="font-size:1.6rem; font-weight:800; color:#10b981; margin-top:4px;">{{ currency_symbol }}{{ annual_gross|floatformat:2 }}</div>
+    </div>
+    <div class="hub-card" style="border-left:4px solid #f43f5e; margin-bottom:0;">
+        <div style="font-size:.74rem; font-weight:700; color:#94a3b8; text-transform:uppercase;">Annual Store Expenses</div>
+        <div style="font-size:1.6rem; font-weight:800; color:#f43f5e; margin-top:4px;">{{ currency_symbol }}{{ annual_expenses_total|floatformat:2 }}</div>
+    </div>
+    <div class="hub-card" style="border-left:4px solid #38bdf8; margin-bottom:0;">
+        <div style="font-size:.74rem; font-weight:700; color:#94a3b8; text-transform:uppercase;">Annual Net Cash</div>
+        <div style="font-size:1.6rem; font-weight:800; color:#38bdf8; margin-top:4px;">{{ currency_symbol }}{{ annual_net_profit|floatformat:2 }}</div>
+    </div>
+    <div class="hub-card" style="border-left:4px solid #a855f7; margin-bottom:0;">
+        <div style="font-size:.74rem; font-weight:700; color:#94a3b8; text-transform:uppercase;">Annual Tax (VAT)</div>
+        <div style="font-size:1.6rem; font-weight:800; color:#c084fc; margin-top:4px;">{{ currency_symbol }}{{ annual_vat|floatformat:2 }}</div>
+    </div>
+</div>
+
+<div class="hub-card">
+    <h3 style="font-size:1.05rem; font-weight:700; color:#f1f5f9; margin-bottom:16px;">12-Month Performance Rollup — {{ annual_year }}</h3>
+    <div class="hub-table-container">
+        <table class="hub-table">
+            <thead>
+                <tr>
+                    <th>Month</th>
+                    <th>Invoices Processed</th>
+                    <th style="text-align:right;">Gross Sales</th>
+                    <th style="text-align:right;">Total VAT</th>
+                    <th style="text-align:right;">Expenses</th>
+                    <th style="text-align:right;">Net Margin</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in annual_months %}
+                <tr>
+                    <td style="font-weight:700; color:#f8fafc;">{{ m.month_name }} {{ annual_year }}</td>
+                    <td style="color:#cbd5e1;">{{ m.sales_count }}</td>
+                    <td style="text-align:right; font-weight:700; color:#10b981;">{{ currency_symbol }}{{ m.gross|floatformat:2 }}</td>
+                    <td style="text-align:right; color:#94a3b8;">{{ currency_symbol }}{{ m.vat|floatformat:2 }}</td>
+                    <td style="text-align:right; color:#f43f5e;">{{ currency_symbol }}{{ m.expenses|floatformat:2 }}</td>
+                    <td style="text-align:right; font-weight:800; color:{% if m.net >= 0 %}#38bdf8{% else %}#f43f5e{% endif %};">
+                        {{ currency_symbol }}{{ m.net|floatformat:2 }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<!-- ================================================================== -->
+<!-- TAB 4: STOCK & VALUATION VIEW                                     -->
+<!-- ================================================================== -->
+{% if active_tab == 'stock' %}
+<div class="metrics-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(210px, 1fr)); gap:16px; margin-bottom:24px;">
+    <div class="hub-card" style="border-left:4px solid #38bdf8; margin-bottom:0;">
+        <div style="font-size:.74rem; font-weight:700; color:#94a3b8; text-transform:uppercase;">Total Physical Stock</div>
+        <div style="font-size:1.6rem; font-weight:800; color:#38bdf8; margin-top:4px;">{{ total_units_on_hand|floatformat:0 }} units</div>
+    </div>
+    <div class="hub-card" style="border-left:4px solid #10b981; margin-bottom:0;">
+        <div style="font-size:.74rem; font-weight:700; color:#94a3b8; text-transform:uppercase;">Retail Valuation</div>
+        <div style="font-size:1.6rem; font-weight:800; color:#10b981; margin-top:4px;">{{ currency_symbol }}{{ total_retail_val|floatformat:2 }}</div>
+    </div>
+    <div class="hub-card" style="border-left:4px solid #f59e0b; margin-bottom:0;">
+        <div style="font-size:.74rem; font-weight:700; color:#94a3b8; text-transform:uppercase;">Low Stock Alerts</div>
+        <div style="font-size:1.6rem; font-weight:800; color:#f59e0b; margin-top:4px;">{{ low_stock_count }} items</div>
+    </div>
+    <div class="hub-card" style="border-left:4px solid #f43f5e; margin-bottom:0;">
+        <div style="font-size:.74rem; font-weight:700; color:#94a3b8; text-transform:uppercase;">Out of Stock</div>
+        <div style="font-size:1.6rem; font-weight:800; color:#f43f5e; margin-top:4px;">{{ out_of_stock_count }} items</div>
+    </div>
+</div>
+
+<div class="hub-card">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <h3 style="font-size:1.05rem; font-weight:700; color:#f1f5f9;">Stock Inventory Items</h3>
+        <a href="{% url 'stock_matrix' %}" class="btn-hub-primary" style="font-size:.8rem;">
+            <i class="fa-solid fa-table-cells"></i> Open Cross-Branch Stock Matrix
+        </a>
+    </div>
+
+    <div class="hub-table-container">
+        <table class="hub-table">
+            <thead>
+                <tr>
+                    <th>Product Name & Category</th>
+                    <th>Barcode</th>
+                    <th>Status</th>
+                    <th style="text-align:right;">Quantity</th>
+                    <th style="text-align:right;">Retail Price</th>
+                    <th style="text-align:right;">Total Retail Val</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for it in inventory_items %}
+                <tr>
+                    <td>
+                        <div style="font-weight:700; color:#f8fafc;">{{ it.name }}</div>
+                        <div style="font-size:.74rem; color:#94a3b8;">{{ it.category }}</div>
+                    </td>
+                    <td style="font-family:monospace; color:#94a3b8; font-size:.8rem;">{{ it.barcode|default:"-" }}</td>
+                    <td>
+                        {% if it.status_tag == 'IN_STOCK' %}
+                        <span class="badge-status active">In Stock</span>
+                        {% elif it.status_tag == 'LOW_STOCK' %}
+                        <span class="badge-status pending">Low Stock</span>
+                        {% else %}
+                        <span class="badge-status offline">Out of Stock</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align:right; font-weight:700; color:#f8fafc;">{{ it.quantity|floatformat:0 }}</td>
+                    <td style="text-align:right; color:#cbd5e1;">{{ currency_symbol }}{{ it.selling_price|floatformat:2 }}</td>
+                    <td style="text-align:right; font-weight:800; color:#38bdf8;">{{ currency_symbol }}{{ it.retail_val|floatformat:2 }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" style="text-align:center; padding:36px; color:#94a3b8;">
+                        <i class="fa-solid fa-box-open" style="font-size:1.8rem; margin-bottom:8px; opacity:.4;"></i>
+                        <p style="font-size:.88rem;">No inventory records synchronized yet.</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}

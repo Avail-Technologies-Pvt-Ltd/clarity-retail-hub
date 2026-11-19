@@ -1,0 +1,1485 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Clarity Retail Hub — {% block title %}{% endblock %}</title>
+
+    <!-- Font Awesome (Free CDN for online hub) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- SweetAlert2 (Local / CDN) -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- Immediate Viewpoint & Sidebar State Persistence -->
+    <script>
+        (function() {
+            try {
+                if (localStorage.getItem('crh_sidebar_collapsed') === 'true' && window.innerWidth > 900) {
+                    document.documentElement.classList.add('sidebar-collapsed-mode');
+                }
+            } catch(e) {}
+        })();
+    </script>
+
+    <style>
+        :root {
+            --bg-base: #0b1120;
+            --bg-surface: #0f172a;
+            --bg-card: #1e293b;
+            --border-color: #334155;
+            --teal-500: #14b8a6;
+            --teal-600: #0d9488;
+            --teal-bg: rgba(20, 184, 166, 0.12);
+            --emerald-500: #10b981;
+            --rose-500: #f43f5e;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --text-dim: #64748b;
+            --topbar-h: 60px;
+            --sidebar-w: 240px;
+            --sidebar-w-collapsed: 68px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            scrollbar-width: thin;
+            scrollbar-color: #334155 transparent;
+        }
+
+        ::-webkit-scrollbar, *::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track, *::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb, *::-webkit-scrollbar-thumb {
+            background-color: #334155;
+            border-radius: 99px;
+        }
+        ::-webkit-scrollbar-thumb:hover, *::-webkit-scrollbar-thumb:hover {
+            background-color: #475569;
+        }
+
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            min-height: 100vh;
+            overflow-x: hidden;
+            margin: 0;
+        }
+
+        /* ── Top Navigation Bar (Fixed End-to-End) ─────────────────── */
+        #topbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            width: 100%;
+            height: var(--topbar-h);
+            background-color: var(--bg-surface);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            z-index: 1000;
+            box-sizing: border-box;
+        }
+
+        .brand-wrap {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .brand-badge {
+            background: linear-gradient(135deg, #0d9488, #14b8a6);
+            color: #ffffff;
+            font-weight: 800;
+            font-size: .82rem;
+            letter-spacing: .08em;
+            padding: 3px 8px;
+            border-radius: 6px;
+        }
+
+        .brand-title {
+            font-weight: 700;
+            font-size: 1.05rem;
+            letter-spacing: -0.01em;
+            color: #f1f5f9;
+        }
+
+        .brand-sub {
+            font-size: .72rem;
+            color: var(--teal-500);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            margin-left: 4px;
+        }
+
+        .tenant-pill {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: .78rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #e2e8f0;
+            text-decoration: none;
+            transition: border-color .15s ease;
+        }
+        .tenant-pill:hover {
+            border-color: var(--teal-500);
+        }
+
+        .tenant-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--emerald-500);
+            box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+        }
+
+        /* ── Sidebar (Fixed Viewport Position) ─────────────────────── */
+        #sidebar {
+            position: fixed;
+            top: var(--topbar-h);
+            left: 0;
+            bottom: 0;
+            height: calc(100vh - var(--topbar-h));
+            width: var(--sidebar-w);
+            background-color: var(--bg-surface);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            padding: 14px 8px;
+            gap: 4px;
+            z-index: 900;
+            overflow-y: auto;
+            overflow-x: hidden;
+            transition: width 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+            position: fixed;
+            user-select: none;
+            box-sizing: border-box;
+        }
+
+        #sidebar-collapse-btn {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            border-radius: 6px;
+            padding: 6px 9px;
+            font-size: .85rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all .15s ease;
+        }
+        #sidebar-collapse-btn:hover {
+            color: var(--text-main);
+            background: var(--bg-card);
+            border-color: var(--teal-500);
+        }
+
+        .sidebar-collapsed-mode #sidebar,
+        #sidebar.collapsed {
+            width: var(--sidebar-w-collapsed) !important;
+            padding: 14px 6px !important;
+        }
+
+        .sidebar-collapsed-mode #sidebar .nav-section-title,
+        #sidebar.collapsed .nav-section-title {
+            opacity: 0;
+            height: 4px;
+            padding: 0;
+            margin: 6px 0;
+            overflow: hidden;
+            border-top: 1px solid rgba(51, 65, 85, 0.5);
+        }
+
+        .sidebar-collapsed-mode #sidebar .nav-item,
+        #sidebar.collapsed .nav-item {
+            justify-content: center !important;
+            padding: 10px 0 !important;
+            gap: 0 !important;
+            position: relative;
+        }
+
+        .sidebar-collapsed-mode #sidebar .nav-item span,
+        #sidebar.collapsed .nav-item span {
+            display: none !important;
+        }
+
+        .sidebar-collapsed-mode #sidebar .nav-item i,
+        #sidebar.collapsed .nav-item i {
+            width: auto !important;
+            font-size: 1.15rem !important;
+            margin: 0 !important;
+        }
+
+        .sidebar-collapsed-mode #sidebar .submenu-chevron,
+        #sidebar.collapsed .submenu-chevron {
+            display: none !important;
+        }
+
+        .sidebar-collapsed-mode #sidebar .sl-submenu,
+        #sidebar.collapsed .sl-submenu {
+            display: none !important;
+        }
+
+        /* Tooltip on hover in collapsed mode */
+        .sidebar-collapsed-mode #sidebar .nav-item:hover::after,
+        #sidebar.collapsed .nav-item:hover::after {
+            content: attr(data-title);
+            position: absolute;
+            left: calc(100% + 12px);
+            top: 50%;
+            transform: translateY(-50%);
+            background: #1e293b;
+            color: #f1f5f9;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            white-space: nowrap;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.6), 0 4px 6px -4px rgba(0, 0, 0, 0.4);
+            border: 1px solid #334155;
+            z-index: 3000;
+            pointer-events: none;
+        }
+
+        .nav-section-title {
+            font-size: .65rem;
+            font-weight: 700;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            padding: 12px 10px 6px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 9px 12px;
+            border-radius: 8px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: .84rem;
+            font-weight: 500;
+            transition: all .15s ease;
+            white-space: nowrap;
+        }
+
+        .nav-item:hover {
+            color: var(--text-main);
+            background-color: var(--bg-card);
+        }
+
+        .nav-item.active {
+            color: #ffffff;
+            background-color: var(--teal-600);
+            font-weight: 600;
+        }
+
+        .nav-item i {
+            width: 18px;
+            text-align: center;
+            font-size: .95rem;
+        }
+
+        /* Submenus with tree guide lines (like in LAN) */
+        .sl-submenu {
+            border-left: 2px solid #334155;
+            margin-left: 20px;
+            padding-left: 6px;
+            margin-top: 3px;
+            margin-bottom: 6px;
+            transition: all .2s ease;
+        }
+        .sub-nav-link {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 10px;
+            border-radius: 6px;
+            color: #94a3b8;
+            text-decoration: none;
+            font-size: .78rem;
+            font-weight: 500;
+            margin-bottom: 2px;
+            transition: all .15s ease;
+            position: relative;
+            white-space: nowrap;
+        }
+        .sub-nav-link:hover {
+            color: #f1f5f9;
+            background: #1e293b;
+        }
+        .sub-nav-link.active {
+            color: #2dd4bf !important;
+            background: rgba(20, 184, 166, 0.14) !important;
+            font-weight: 600 !important;
+        }
+        .sub-nav-link.active::before {
+            content: '';
+            position: absolute;
+            left: -8px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 3px;
+            height: 14px;
+            background: #14b8a6;
+            border-radius: 2px;
+        }
+        .sub-nav-link i {
+            font-size: .75rem;
+            width: 14px;
+            text-align: center;
+        }
+
+        /* ── Main Content Area (Independent Window Scroll) ────────── */
+        #main-content {
+            margin-left: var(--sidebar-w);
+            padding-top: calc(var(--topbar-h) + 24px);
+            padding-left: 32px;
+            padding-right: 32px;
+            padding-bottom: 32px;
+            min-height: 100vh;
+            transition: margin-left 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+            box-sizing: border-box;
+            width: calc(100% - var(--sidebar-w));
+        }
+
+        .sidebar-collapsed-mode #main-content,
+        html.sidebar-collapsed-mode #main-content {
+            margin-left: var(--sidebar-w-collapsed) !important;
+            width: calc(100% - var(--sidebar-w-collapsed)) !important;
+        }
+
+        /* ── Common UI Cards & Inputs ───────────────────────────── */
+        .hub-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .hub-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 6px;
+        }
+
+        .hub-subtitle {
+            font-size: .85rem;
+            color: var(--text-muted);
+            margin-bottom: 20px;
+        }
+
+        .btn-hub-primary {
+            background-color: var(--teal-600);
+            color: #ffffff;
+            border: none;
+            border-radius: 8px;
+            padding: 9px 18px;
+            font-size: .85rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            transition: background .15s ease;
+        }
+        .btn-hub-primary:hover {
+            background-color: var(--teal-500);
+        }
+
+        .btn-hub-ghost {
+            background: transparent;
+            color: var(--text-muted);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-size: .85rem;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all .15s ease;
+        }
+        .btn-hub-ghost:hover {
+            background: var(--bg-card);
+            color: var(--text-main);
+            border-color: #475569;
+        }
+
+        .hub-table-container {
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            background: var(--bg-card);
+        }
+
+        .hub-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: .85rem;
+            min-width: 600px;
+        }
+
+        .hub-table th {
+            background: #152238;
+            color: #94a3b8;
+            text-transform: uppercase;
+            font-size: .72rem;
+            font-weight: 700;
+            letter-spacing: .05em;
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .hub-table td {
+            padding: 12px 16px;
+            color: #cbd5e1;
+            border-bottom: 1px solid #283548;
+            vertical-align: middle;
+        }
+
+        .hub-table tr:hover td {
+            background-color: rgba(30, 41, 59, 0.7);
+        }
+
+        .badge-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: .72rem;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 9999px;
+        }
+        .badge-status.active {
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+        .badge-status.offline {
+            background: rgba(244, 63, 94, 0.15);
+            color: #fb7185;
+            border: 1px solid rgba(244, 63, 94, 0.3);
+        }
+
+        /* Grid stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .stat-val {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: #f1f5f9;
+            margin: 4px 0 2px;
+        }
+        .stat-lbl {
+            font-size: .75rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: .04em;
+        }
+        .stat-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            background: var(--teal-bg);
+            color: var(--teal-500);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+
+        /* ── Top-Right User Dropdown ─────────────────────────────── */
+        .user-dd-item {
+            transition: all .15s ease;
+        }
+        .user-dd-item:hover {
+            background: #0f172a !important;
+            color: #f8fafc !important;
+        }
+        .user-dd-logout:hover {
+            background: rgba(244, 63, 94, 0.15) !important;
+            color: #fb7185 !important;
+        }
+
+        /* ── Profile Modal Styling ──────────────────────────────── */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(2, 6, 23, 0.75);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(3px);
+        }
+        .modal-overlay.active {
+            display: flex;
+        }
+        .modal-container {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 14px;
+            width: 92%;
+            max-width: 520px;
+            box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.7);
+            overflow: hidden;
+            animation: modalFadeIn 0.2s ease;
+        }
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: translateY(-15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .modal-header {
+            padding: 16px 22px;
+            background: #0f172a;
+            border-bottom: 1px solid #334155;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .modal-body {
+            padding: 22px;
+            max-height: calc(85vh - 120px);
+            overflow-y: auto;
+        }
+
+        /* ── Mobile Friendly Enhancements ───────────────────────── */
+        #mobile-menu-btn {
+            display: none;
+            background: transparent;
+            border: none;
+            color: #f1f5f9;
+            font-size: 1.25rem;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 6px;
+        }
+        #mobile-menu-btn:hover {
+            background: var(--bg-card);
+        }
+
+        #sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(2px);
+            z-index: 1500;
+        }
+
+        #sidebar-mobile-header {
+            display: none;
+        }
+
+        @media (max-width: 900px) {
+            #mobile-menu-btn {
+                display: block;
+            }
+            #sidebar-collapse-btn {
+                display: none !important;
+            }
+            #sidebar {
+                position: fixed;
+                top: 0 !important;
+                bottom: 0;
+                left: -290px;
+                width: 275px !important;
+                height: 100vh !important;
+                z-index: 2000;
+                transition: left .25s ease-in-out;
+                box-shadow: 6px 0 30px rgba(0, 0, 0, 0.75);
+                padding: 12px 10px !important;
+            }
+            #sidebar.mobile-open {
+                left: 0;
+            }
+            #sidebar-overlay {
+                z-index: 1900;
+            }
+            #sidebar-overlay.active {
+                display: block;
+            }
+            #sidebar-mobile-header {
+                display: flex !important;
+                align-items: center;
+                justify-content: space-between;
+                padding: 6px 8px 14px;
+                margin-bottom: 10px;
+                border-bottom: 1px solid var(--border-color);
+            }
+            #main-content {
+                margin-left: 0 !important;
+                width: 100% !important;
+                padding: calc(var(--topbar-h) + 16px) 14px 24px;
+            }
+            .stats-grid,
+            .metrics-grid {
+                grid-template-columns: repeat(2, 1fr) !important;
+                gap: 12px !important;
+            }
+            .stat-card {
+                padding: 14px;
+            }
+            .stat-val {
+                font-size: 1.3rem;
+            }
+            .stat-icon {
+                width: 36px;
+                height: 36px;
+                font-size: 1rem;
+            }
+            .hub-card {
+                padding: 18px 14px;
+                margin-bottom: 16px;
+            }
+            .brand-sub {
+                display: none;
+            }
+        }
+
+        /* Responsive Breakpoint: Tablets & Large Phones (<= 768px) */
+        @media (max-width: 768px) {
+            #topbar {
+                padding: 0 12px;
+            }
+            .brand-title {
+                font-size: .95rem;
+            }
+            /* User profile: hide name and role, show stylish circular avatar */
+            #topbarUserName, #userMenuBtn > div:nth-child(2), #userMenuChevron {
+                display: none !important;
+            }
+            #userMenuBtn {
+                padding: 4px !important;
+                border-radius: 50% !important;
+            }
+            /* Representation Switcher compact */
+            #representationSwitcherContainer .tenant-pill > div > span:first-child,
+            #representationSwitcherContainer .tenant-pill > span:last-child {
+                display: none !important;
+            }
+            #representationSwitcherContainer .tenant-pill {
+                padding: 5px 9px;
+                max-width: 130px;
+            }
+            #representationSwitcherContainer .tenant-pill > div > span:last-child {
+                max-width: 100px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                font-size: .75rem;
+            }
+            /* Branch Selector compact */
+            #branch-mode-container button span {
+                max-width: 85px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            /* Ensure dropdowns stay strictly within viewport */
+            #branch-dropdown-menu,
+            #representationDropdownMenu,
+            #userMenuDropdown {
+                max-width: calc(100vw - 20px) !important;
+                width: 290px;
+                right: 0 !important;
+                left: auto !important;
+            }
+        }
+
+        /* Responsive Breakpoint: Phones (<= 520px) */
+        @media (max-width: 520px) {
+            .brand-title {
+                display: none;
+            }
+            .stats-grid,
+            .metrics-grid {
+                grid-template-columns: 1fr !important;
+            }
+            /* Branch button: icon only on tiny screens */
+            #branch-mode-container button span {
+                display: none !important;
+            }
+            #branch-mode-container button {
+                padding: 6px 8px !important;
+            }
+            /* Representation pill: dot only on tiny screens */
+            #representationSwitcherContainer .tenant-pill > div {
+                display: none !important;
+            }
+            #representationSwitcherContainer .tenant-pill {
+                padding: 8px !important;
+                border-radius: 50% !important;
+            }
+            .hub-card {
+                padding: 16px 12px;
+                border-radius: 10px;
+            }
+            .hub-title {
+                font-size: 1.15rem;
+            }
+            .hub-subtitle {
+                font-size: .78rem;
+                margin-bottom: 12px;
+            }
+            .btn-hub-primary,
+            .btn-hub-ghost {
+                font-size: .8rem;
+                padding: 7px 12px;
+            }
+            /* SweetAlert responsive constraints */
+            .swal2-popup {
+                width: 95% !important;
+                padding: 16px 12px !important;
+                border-radius: 12px !important;
+            }
+            .swal2-title {
+                font-size: 1.15rem !important;
+            }
+            .swal2-content, .swal2-html-container {
+                margin: 0.5em 0 !important;
+                font-size: .84rem !important;
+            }
+            .swal2-html-container div[style*="grid-template-columns:1fr 1fr"],
+            .swal2-html-container div[style*="grid-template-columns: 1fr 1fr"] {
+                grid-template-columns: 1fr !important;
+            }
+        }
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+    <!-- ── Top Navigation Bar ──────────────────────────────────────── -->
+    <header id="topbar">
+        <div style="display:flex; align-items:center; gap:10px;">
+            <button type="button" id="mobile-menu-btn" onclick="toggleMobileSidebar()" title="Toggle Navigation">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+            <button type="button" id="sidebar-collapse-btn" onclick="toggleSidebarCollapse()" title="Toggle Sidebar Width">
+                <i class="fa-solid fa-bars-staggered" id="sidebar-collapse-icon"></i>
+            </button>
+            <a href="/" class="brand-wrap">
+                <img src="{% static 'images/clarity-retail-mark.png' %}" alt="Clarity Retail" style="height:32px; width:32px; object-fit:contain; filter:drop-shadow(0 2px 6px rgba(0,0,0,0.4));">
+                <div>
+                    <span class="brand-title">Retail Hub</span>
+                    <span class="brand-sub">Cloud</span>
+                </div>
+            </a>
+        </div>
+
+        <!-- ── Branch Mode Switcher, Business Identity & User Menu ─── -->
+        <div style="display:flex; align-items:center; gap:10px;">
+
+            <!-- Hierarchical Branch Mode Switcher -->
+            {% if can_switch_branches %}
+            <div style="position:relative;" id="branch-mode-container">
+                <button type="button" class="btn-hub-ghost" onclick="toggleBranchDropdown(event)" style="padding:5px 12px; font-size:.8rem; border-color:{% if branch_mode == 'SINGLE' %}#0d9488{% else %}#334155{% endif %}; background:{% if branch_mode == 'SINGLE' %}rgba(13,148,136,0.18){% else %}transparent{% endif %};">
+                    {% if branch_mode == 'SINGLE' and active_branch %}
+                        <i class="fa-solid fa-store" style="color:#2dd4bf;"></i>
+                        <span style="font-weight:600; color:#f1f5f9;">{{ active_branch.name }}</span>
+                        <span style="font-family:monospace; background:#0f172a; padding:1px 5px; border-radius:3px; font-size:.72rem; color:#38bdf8;">{{ active_branch.branch_code }}</span>
+                    {% else %}
+                        <i class="fa-solid fa-network-wired" style="color:#38bdf8;"></i>
+                        <span style="font-weight:600; color:#f1f5f9;">All Branches (Combined)</span>
+                    {% endif %}
+                    <i class="fa-solid fa-chevron-down" style="font-size:.65rem; color:#94a3b8; margin-left:2px;"></i>
+                </button>
+
+                <div id="branch-dropdown-menu" style="display:none; position:absolute; top:calc(100% + 6px); right:0; width:290px; background:#1e293b; border:1px solid #334155; border-radius:10px; box-shadow:0 20px 25px -5px rgba(0,0,0,0.5); z-index:3000; padding:6px; flex-direction:column; gap:2px;">
+                    <div style="font-size:.68rem; text-transform:uppercase; color:#64748b; font-weight:700; padding:6px 10px;">Select Reporting Scope</div>
+                    <a href="javascript:void(0)" onclick="switchBranchScope('ALL')" style="display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:6px; text-decoration:none; color:{% if branch_mode == 'COMBINED' %}#2dd4bf{% else %}#cbd5e1{% endif %}; background:{% if branch_mode == 'COMBINED' %}#0f172a{% else %}transparent{% endif %}; font-size:.82rem; font-weight:600;">
+                        <i class="fa-solid fa-network-wired" style="width:16px;"></i> All Branches (Combined Mode)
+                    </a>
+                    <div style="height:1px; background:#334155; margin:4px 0;"></div>
+                    <div style="font-size:.68rem; text-transform:uppercase; color:#64748b; font-weight:700; padding:4px 10px;">Individual Store Nodes</div>
+                    {% for b in all_branches %}
+                    <a href="javascript:void(0)" onclick="switchBranchScope('{{ b.id }}')" style="display:flex; align-items:center; justify-content:space-between; padding:8px 10px; border-radius:6px; text-decoration:none; color:{% if active_branch.id == b.id %}#2dd4bf{% else %}#cbd5e1{% endif %}; background:{% if active_branch.id == b.id %}#0f172a{% else %}transparent{% endif %}; font-size:.82rem;">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <i class="fa-solid fa-store" style="width:16px; color:#94a3b8;"></i>
+                            <span>{{ b.name }}{% if b.is_main_branch %} <i class="fa-solid fa-crown" style="font-size:.65rem; color:#2dd4bf;" title="Main Branch"></i>{% endif %}</span>
+                        </div>
+                        <span style="font-family:monospace; font-size:.72rem; color:#38bdf8;">{{ b.branch_code }}</span>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% else %}
+            <div style="display:flex; align-items:center; gap:8px; font-size:.8rem; color:#cbd5e1; background:#0f172a; padding:5px 10px; border-radius:8px; border:1px solid #334155;">
+                <i class="fa-solid fa-store" style="color:#2dd4bf;"></i>
+                <span>{{ active_branch.name|default:"Store Operations" }}</span>
+            </div>
+            {% endif %}
+
+            <!-- ── Quick Representation Switcher (Tenant vs Admin) ── -->
+            <div style="position:relative;" id="representationSwitcherContainer">
+                <button type="button" onclick="toggleRepresentationDropdown(event)" class="tenant-pill" style="cursor:pointer; border-color:{% if request.user.is_superuser %}#6366f1{% else %}var(--border-color){% endif %}; background:{% if request.user.is_superuser %}rgba(99,102,241,0.12){% else %}var(--bg-card){% endif %};" title="Click to change what you are representing">
+                    <span class="tenant-dot" style="{% if request.user.is_superuser %}background:#818cf8; box-shadow:0 0 8px rgba(129,140,248,0.7);{% endif %}"></span>
+                    <div style="display:flex; flex-direction:column; text-align:left; line-height:1.15;">
+                        <span style="font-size:.65rem; color:{% if request.user.is_superuser %}#a5b4fc{% else %}#94a3b8{% endif %}; text-transform:uppercase; font-weight:700; letter-spacing:.05em;">Representing:</span>
+                        <span style="font-weight:700; color:#f1f5f9; font-size:.82rem;">{{ request.tenant.name|default:"Tenant Store" }}</span>
+                    </div>
+                    <span style="background:#0f172a; border:1px solid #334155; padding:2px 6px; border-radius:5px; font-size:.68rem; color:#2dd4bf; margin-left:4px; font-weight:600; display:inline-flex; align-items:center; gap:3px;">
+                        <i class="fa-solid fa-arrows-rotate"></i> Change
+                    </span>
+                </button>
+
+                <!-- Representation Dropdown Menu -->
+                <div id="representationDropdownMenu" style="display:none; position:absolute; top:calc(100% + 6px); right:0; width:300px; background:#1e293b; border:1px solid #334155; border-radius:12px; box-shadow:0 20px 35px -5px rgba(0,0,0,0.6); z-index:4000; padding:8px; flex-direction:column; gap:4px;">
+                    <div style="font-size:.7rem; text-transform:uppercase; color:#94a3b8; font-weight:700; padding:6px 10px; border-bottom:1px solid #334155; margin-bottom:4px; display:flex; justify-content:space-between; align-items:center;">
+                        <span>Change Representation</span>
+                        <span style="color:#2dd4bf; font-size:.65rem;">Quick Switch</span>
+                    </div>
+
+                    <!-- Current Representation Status -->
+                    <div style="padding:8px 10px; background:#0f172a; border-radius:8px; margin-bottom:6px; font-size:.78rem; border-left:3px solid #14b8a6;">
+                        <div style="color:#64748b; font-size:.68rem; text-transform:uppercase; font-weight:700;">Currently Active:</div>
+                        <div style="font-weight:700; color:#f8fafc; font-size:.85rem; margin-top:2px;">{{ request.tenant.name|default:"Store Operations" }}</div>
+                        <div style="color:#94a3b8; font-size:.7rem; font-family:monospace;">Schema: {{ request.tenant.schema_name|default:"active" }}</div>
+                    </div>
+
+                    {% if request.user.is_superuser %}
+                    <!-- Quick Option: Switch to Admin View -->
+                    <a href="{{ central_url }}/system-admin/" style="display:flex; align-items:center; gap:10px; padding:10px; border-radius:8px; text-decoration:none; color:#f8fafc; background:rgba(99,102,241,0.15); border:1px solid rgba(99,102,241,0.3); font-size:.82rem; font-weight:600; transition:all .15s ease;" onmouseover="this.style.background='rgba(99,102,241,0.25)'" onmouseout="this.style.background='rgba(99,102,241,0.15)'">
+                        <div style="width:30px; height:30px; border-radius:6px; background:#4338ca; color:#fff; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                            <i class="fa-solid fa-shield-halved" style="font-size:.85rem;"></i>
+                        </div>
+                        <div>
+                            <div style="font-weight:700; color:#c7d2fe;">Represent System Admin</div>
+                            <div style="font-size:.68rem; color:#94a3b8;">Manage all tenants & master platform</div>
+                        </div>
+                    </a>
+                    {% endif %}
+
+                    <!-- Quick Option: Switch to Another Business / All Workspaces -->
+                    <a href="{{ central_url }}/workspaces/" style="display:flex; align-items:center; gap:10px; padding:10px; border-radius:8px; text-decoration:none; color:#f8fafc; background:#0f172a; border:1px solid #334155; font-size:.82rem; font-weight:600; margin-top:4px; transition:all .15s ease;" onmouseover="this.style.borderColor='#14b8a6'" onmouseout="this.style.borderColor='#334155'">
+                        <div style="width:30px; height:30px; border-radius:6px; background:rgba(20,184,166,0.2); color:#2dd4bf; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                            <i class="fa-solid fa-store" style="font-size:.85rem;"></i>
+                        </div>
+                        <div>
+                            <div style="font-weight:700; color:#f1f5f9;">Select Another Tenant Store</div>
+                            <div style="font-size:.68rem; color:#94a3b8;">Browse all privileged businesses</div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Notifications -->
+            <a href="/notifications/" class="btn-hub-ghost" style="padding:6px 10px; font-size:.82rem;" title="Notifications">
+                <i class="fa-solid fa-bell"></i>
+            </a>
+
+            <!-- ── Top-Right User Profile & Logout (just like in LAN) ── -->
+            <div style="position:relative; margin-left:2px;" id="userMenuContainer">
+                <button type="button" id="userMenuBtn" onclick="toggleUserMenu(event)"
+                        style="background:#0f172a; border:1px solid #334155; border-radius:10px; padding:4px 10px 4px 6px; display:flex; align-items:center; gap:8px; cursor:pointer; transition:all .15s ease; outline:none;"
+                        onmouseover="this.style.borderColor='#14b8a6'; this.style.background='#1e293b';"
+                        onmouseout="if(!window.isUserMenuOpen) { this.style.borderColor='#334155'; this.style.background='#0f172a'; }">
+                    <div style="width:28px; height:28px; border-radius:8px; background:linear-gradient(135deg,#0d9488,#0891b2); display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700; font-size:.78rem; flex-shrink:0;">
+                        {{ request.user.first_name|first|upper|default:request.user.username|first|upper|default:"A" }}
+                    </div>
+                    <div style="display:flex; flex-direction:column; text-align:left; line-height:1.2;">
+                        <span id="topbarUserName" style="color:#f1f5f9; font-size:.78rem; font-weight:600; max-width:110px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                            {{ request.user.get_full_name|default:request.user.username|default:"Administrator" }}
+                        </span>
+                        <span style="color:#14b8a6; font-size:.65rem; font-weight:500;">
+                            {{ request.user.hub_profile.get_role_display|default:"Workspace Admin" }}
+                        </span>
+                    </div>
+                    <i class="fa-solid fa-chevron-down" id="userMenuChevron" style="color:#64748b; font-size:.65rem; margin-left:2px; transition:transform .2s ease;"></i>
+                </button>
+
+                <!-- Dropdown Menu -->
+                <div id="userMenuDropdown" style="display:none; position:absolute; right:0; top:calc(100% + 8px); width:280px; background:#1e293b; border:1px solid #334155; border-radius:14px; box-shadow:0 20px 45px -10px rgba(0,0,0,0.7); z-index:9999; overflow:hidden;">
+                    <!-- Header with user details -->
+                    <div style="padding:14px 16px; background:#0f172a; border-bottom:1px solid #334155; display:flex; align-items:center; gap:12px;">
+                        <div style="width:40px; height:40px; border-radius:10px; background:linear-gradient(135deg,#0d9488,#0891b2); display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700; font-size:1.05rem; flex-shrink:0;">
+                            {{ request.user.first_name|first|upper|default:request.user.username|first|upper|default:"A" }}
+                        </div>
+                        <div style="flex:1; min-width:0;">
+                            <div id="ddUserFullName" style="color:#f8fafc; font-weight:600; font-size:.86rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                                {{ request.user.get_full_name|default:request.user.username|default:"Administrator" }}
+                            </div>
+                            <div id="ddUserEmail" style="color:#94a3b8; font-size:.72rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                                {{ request.user.email|default:"admin@clarity.local" }}
+                            </div>
+                            <div style="display:inline-flex; align-items:center; gap:4px; margin-top:4px; background:rgba(20,184,166,0.15); color:#2dd4bf; font-size:.65rem; font-weight:600; padding:1px 7px; border-radius:99px; border:1px solid rgba(20,184,166,0.25);">
+                                <i class="fa-solid fa-shield" style="font-size:.6rem;"></i> {{ request.user.hub_profile.get_role_display|default:"Workspace Admin" }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Menu links -->
+                    <div style="padding:8px 6px;">
+                        <!-- Profile Info & Account Settings -->
+                        <a href="javascript:void(0)" onclick="openUserProfileModal('info'); closeUserMenu();" class="user-dd-item" style="display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:8px; color:#cbd5e1; text-decoration:none; font-size:.8rem;">
+                            <div style="width:28px; height:28px; border-radius:7px; background:#0f172a; border:1px solid #334155; display:flex; align-items:center; justify-content:center; color:#14b8a6; flex-shrink:0;">
+                                <i class="fa-solid fa-user-gear" style="font-size:.75rem;"></i>
+                            </div>
+                            <div style="flex:1;">
+                                <div style="font-weight:500; line-height:1.2; color:#f1f5f9;">Account Settings</div>
+                                <div style="font-size:.68rem; color:#64748b;">Profile info & contact</div>
+                            </div>
+                        </a>
+
+                        <!-- Security & Password -->
+                        <a href="javascript:void(0)" onclick="openUserProfileModal('security'); closeUserMenu();" class="user-dd-item" style="display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:8px; color:#cbd5e1; text-decoration:none; font-size:.8rem;">
+                            <div style="width:28px; height:28px; border-radius:7px; background:#0f172a; border:1px solid #334155; display:flex; align-items:center; justify-content:center; color:#38bdf8; flex-shrink:0;">
+                                <i class="fa-solid fa-key" style="font-size:.75rem;"></i>
+                            </div>
+                            <div style="flex:1;">
+                                <div style="font-weight:500; line-height:1.2; color:#f1f5f9;">Security & Password</div>
+                                <div style="font-size:.68rem; color:#64748b;">Update login credentials</div>
+                            </div>
+                        </a>
+
+                        <!-- Switch Business / Workspaces -->
+                        <a href="{{ central_url }}/workspaces/" class="user-dd-item" style="display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:8px; color:#cbd5e1; text-decoration:none; font-size:.8rem;">
+                            <div style="width:28px; height:28px; border-radius:7px; background:#0f172a; border:1px solid #334155; display:flex; align-items:center; justify-content:center; color:#a855f7; flex-shrink:0;">
+                                <i class="fa-solid fa-building-circle-arrow-right" style="font-size:.75rem;"></i>
+                            </div>
+                            <div style="flex:1;">
+                                <div style="font-weight:500; line-height:1.2; color:#f1f5f9;">Switch Business</div>
+                                <div style="font-size:.68rem; color:#64748b;">Change active tenant workspace</div>
+                            </div>
+                        </a>
+
+                        <!-- Divider -->
+                        <div style="height:1px; background:#334155; margin:6px 6px;"></div>
+
+                        <!-- Log Out Button -->
+                        <a href="{% url 'user_logout' %}" class="user-dd-item user-dd-logout" style="display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:8px; color:#f43f5e; text-decoration:none; font-size:.8rem;">
+                            <div style="width:28px; height:28px; border-radius:7px; background:rgba(244,63,94,0.1); border:1px solid rgba(244,63,94,0.25); display:flex; align-items:center; justify-content:center; color:#f43f5e; flex-shrink:0;">
+                                <i class="fa-solid fa-right-from-bracket" style="font-size:.75rem;"></i>
+                            </div>
+                            <div style="flex:1;">
+                                <div style="font-weight:600; line-height:1.2;">Log Out</div>
+                                <div style="font-size:.68rem; color:#94a3b8;">End current session safely</div>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Overlay for mobile sidebar -->
+    <div id="sidebar-overlay" onclick="toggleMobileSidebar()"></div>
+
+    <!-- ── Left Sidebar (Collapsible with Expandable Submenus) ──────── -->
+    <aside id="sidebar">
+        <!-- Mobile Drawer Header with Close Button -->
+        <div id="sidebar-mobile-header">
+            <div style="display:flex; align-items:center; gap:8px;">
+                <img src="{% static 'images/clarity-retail-mark.png' %}" alt="Clarity" style="height:26px; width:26px; object-fit:contain;">
+                <div>
+                    <span style="font-weight:700; font-size:.9rem; color:#f1f5f9; display:block; line-height:1.2;">Retail Hub</span>
+                    <span style="font-size:.65rem; color:#2dd4bf; text-transform:uppercase; font-weight:600;">Cloud Operations</span>
+                </div>
+            </div>
+            <button type="button" onclick="toggleMobileSidebar()" style="background:#0f172a; border:1px solid #334155; color:#cbd5e1; font-size:.9rem; cursor:pointer; width:30px; height:30px; border-radius:6px; display:inline-flex; align-items:center; justify-content:center;" title="Close Menu">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <div class="nav-section-title">Store Operations</div>
+        <a href="/" class="nav-item {% block nav_dashboard %}{% endblock %}" data-title="Dashboard" title="Dashboard">
+            <i class="fa-solid fa-gauge-high"></i> <span>Dashboard</span>
+        </a>
+        <a href="/branches/" class="nav-item {% block nav_branches %}{% endblock %}" data-title="Store Branches" title="Store Branches">
+            <i class="fa-solid fa-shop"></i> <span>Store Branches</span>
+        </a>
+        <a href="/branches/transfers/" class="nav-item {% block nav_transfers %}{% endblock %}" data-title="Transfer Buffer" title="Inter-Branch Transfer Buffer">
+            <i class="fa-solid fa-arrows-split-up-and-left"></i> <span>Transfer Buffer</span>
+        </a>
+        <a href="/sync/monitor/" class="nav-item {% block nav_sync %}{% endblock %}" data-title="Edge Sync Monitor" title="Edge Sync Monitor">
+            <i class="fa-solid fa-arrows-rotate"></i> <span>Edge Sync Monitor</span>
+        </a>
+
+        <div class="nav-section-title">Consolidated Reports</div>
+        
+        <!-- Expandable Reports with Sub-buttons -->
+        <div class="nav-item-group" style="position:relative;">
+            <a href="javascript:void(0)" onclick="toggleReportsSubmenu(event)" class="nav-item {% block nav_reports %}{% endblock %}" data-title="Chain Reports" title="Chain Reports" style="justify-content:space-between;">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <i class="fa-solid fa-chart-column"></i>
+                    <span>Chain Reports</span>
+                </div>
+                <i class="fa-solid fa-chevron-down submenu-chevron" id="reports-chevron" style="font-size:.65rem; transition:transform .2s ease;"></i>
+            </a>
+            <div id="reports-submenu" class="sl-submenu" style="display:{% if active_tab or in_reports %}block{% else %}none{% endif %};">
+                <a href="/reports/?tab=daily" class="sub-nav-link {% if active_tab == 'daily' or not active_tab and in_reports %}active{% endif %}" title="Daily Report">
+                    <i class="fa-solid fa-calendar-day"></i> <span>Daily Report</span>
+                </a>
+                <a href="/reports/?tab=monthly" class="sub-nav-link {% if active_tab == 'monthly' %}active{% endif %}" title="Monthly Ledger">
+                    <i class="fa-solid fa-calendar-days"></i> <span>Monthly Report</span>
+                </a>
+                <a href="/reports/?tab=annual" class="sub-nav-link {% if active_tab == 'annual' %}active{% endif %}" title="Annual Audit">
+                    <i class="fa-solid fa-chart-line"></i> <span>Annual Report</span>
+                </a>
+                <a href="/reports/stock-matrix/" class="sub-nav-link {% if request.path == '/reports/stock-matrix/' %}active{% endif %}" title="Cross-Branch Stock Matrix">
+                    <i class="fa-solid fa-table-cells"></i> <span>Live Stock Matrix</span>
+                </a>
+                <a href="/reports/?tab=stock" class="sub-nav-link {% if active_tab == 'stock' %}active{% endif %}" title="Stock Valuation">
+                    <i class="fa-solid fa-boxes-stacked"></i> <span>Stock Valuation</span>
+                </a>
+            </div>
+        </div>
+
+        <a href="/marketplace/" class="nav-item {% block nav_marketplace %}{% endblock %}" data-title="B2B Exchange" title="B2B Exchange">
+            <i class="fa-solid fa-store"></i> <span>B2B Exchange</span>
+        </a>
+
+        <div class="nav-section-title">Company Settings</div>
+        <a href="/subscriptions/" class="nav-item {% block nav_subscription %}{% endblock %}" data-title="Subscription & Plan" title="Subscription & Plan">
+            <i class="fa-solid fa-shield-halved"></i> <span>Subscription & Plan</span>
+        </a>
+        <a href="/accounts/" class="nav-item {% block nav_users %}{% endblock %}" data-title="Team & Roles" title="Team & Roles">
+            <i class="fa-solid fa-user-group"></i> <span>Team & Roles</span>
+        </a>
+    </aside>
+
+    <!-- ── Main Content Body (Window Scrollable with Maintained Viewpoint) ── -->
+    <main id="main-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- ── Account Profile Management Modal (Like LAN) ─────────────── -->
+    <div id="userProfileModal" class="modal-overlay" onclick="handleProfileModalBackdrop(event)">
+        <div class="modal-container">
+            <div class="modal-header">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <div style="width:32px; height:32px; border-radius:8px; background:var(--teal-bg); color:var(--teal-500); display:flex; align-items:center; justify-content:center; font-size:.9rem;">
+                        <i class="fa-solid fa-user-gear"></i>
+                    </div>
+                    <div>
+                        <h3 style="font-size:.95rem; font-weight:700; color:#f1f5f9; margin:0;" id="profileModalTitle">Account Settings</h3>
+                        <p style="font-size:.72rem; color:#94a3b8; margin:0;">Manage your login credentials & profile info</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeUserProfileModal()" style="background:none; border:none; color:#94a3b8; cursor:pointer; font-size:1.1rem; padding:4px;" title="Close">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Modal Sub-Tabs -->
+            <div style="display:flex; border-bottom:1px solid #334155; background:#0f172a; padding:0 14px;">
+                <button type="button" id="tabBtnInfo" onclick="switchProfileModalTab('info')" style="padding:10px 14px; background:none; border:none; border-bottom:2px solid var(--teal-500); color:var(--teal-500); font-size:.8rem; font-weight:600; cursor:pointer;">
+                    <i class="fa-solid fa-id-badge mr-1"></i> Profile Details
+                </button>
+                <button type="button" id="tabBtnSecurity" onclick="switchProfileModalTab('security')" style="padding:10px 14px; background:none; border:none; border-bottom:2px solid transparent; color:#94a3b8; font-size:.8rem; font-weight:600; cursor:pointer;">
+                    <i class="fa-solid fa-key mr-1"></i> Change Password
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <!-- Tab 1: Profile Details Form -->
+                <form id="profileInfoForm" onsubmit="submitProfileInfo(event)" style="display:flex; flex-direction:column; gap:14px;">
+                    {% csrf_token %}
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                        <div>
+                            <label style="display:block; font-size:.75rem; font-weight:600; color:#94a3b8; margin-bottom:4px;">First Name</label>
+                            <input type="text" name="first_name" id="profFirstName" value="{{ request.user.first_name }}" style="width:100%; background:#0f172a; border:1px solid #334155; border-radius:8px; padding:8px 12px; color:#f1f5f9; font-size:.84rem; outline:none;">
+                        </div>
+                        <div>
+                            <label style="display:block; font-size:.75rem; font-weight:600; color:#94a3b8; margin-bottom:4px;">Last Name</label>
+                            <input type="text" name="last_name" id="profLastName" value="{{ request.user.last_name }}" style="width:100%; background:#0f172a; border:1px solid #334155; border-radius:8px; padding:8px 12px; color:#f1f5f9; font-size:.84rem; outline:none;">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label style="display:block; font-size:.75rem; font-weight:600; color:#94a3b8; margin-bottom:4px;">Email Address</label>
+                        <input type="email" name="email" id="profEmail" value="{{ request.user.email }}" style="width:100%; background:#0f172a; border:1px solid #334155; border-radius:8px; padding:8px 12px; color:#f1f5f9; font-size:.84rem; outline:none;">
+                    </div>
+
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                        <div>
+                            <label style="display:block; font-size:.75rem; font-weight:600; color:#94a3b8; margin-bottom:4px;">Phone Number</label>
+                            <input type="text" name="phone" id="profPhone" value="{{ request.user.hub_profile.phone|default:'' }}" placeholder="+263..." style="width:100%; background:#0f172a; border:1px solid #334155; border-radius:8px; padding:8px 12px; color:#f1f5f9; font-size:.84rem; outline:none;">
+                        </div>
+                        <div>
+                            <label style="display:block; font-size:.75rem; font-weight:600; color:#94a3b8; margin-bottom:4px;">Job Title / Designation</label>
+                            <input type="text" name="job_title" id="profJobTitle" value="{{ request.user.hub_profile.job_title|default:'Retail Associate' }}" style="width:100%; background:#0f172a; border:1px solid #334155; border-radius:8px; padding:8px 12px; color:#f1f5f9; font-size:.84rem; outline:none;">
+                        </div>
+                    </div>
+
+                    <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:10px;">
+                        <button type="button" onclick="closeUserProfileModal()" class="btn-hub-ghost" style="padding:7px 14px;">Cancel</button>
+                        <button type="submit" class="btn-hub-primary" style="padding:7px 18px;">
+                            <i class="fa-solid fa-floppy-disk"></i> Save Profile
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Tab 2: Security & Password Form -->
+                <form id="profileSecurityForm" onsubmit="submitPasswordChange(event)" style="display:none; flex-direction:column; gap:14px;">
+                    {% csrf_token %}
+                    <div>
+                        <label style="display:block; font-size:.75rem; font-weight:600; color:#94a3b8; margin-bottom:4px;">New Password</label>
+                        <input type="password" name="new_password" id="profNewPass" required minlength="6" placeholder="At least 6 characters" style="width:100%; background:#0f172a; border:1px solid #334155; border-radius:8px; padding:8px 12px; color:#f1f5f9; font-size:.84rem; outline:none;">
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:.75rem; font-weight:600; color:#94a3b8; margin-bottom:4px;">Confirm New Password</label>
+                        <input type="password" name="confirm_password" id="profConfirmPass" required minlength="6" placeholder="Repeat new password" style="width:100%; background:#0f172a; border:1px solid #334155; border-radius:8px; padding:8px 12px; color:#f1f5f9; font-size:.84rem; outline:none;">
+                    </div>
+
+                    <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:10px;">
+                        <button type="button" onclick="closeUserProfileModal()" class="btn-hub-ghost" style="padding:7px 14px;">Cancel</button>
+                        <button type="submit" class="btn-hub-primary" style="padding:7px 18px; background-color:#38bdf8;">
+                            <i class="fa-solid fa-shield-halved"></i> Update Password
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Interactive JavaScript Suite ────────────────────────────── -->
+    <script>
+        // Sidebar Width Toggle (Desktop)
+        function toggleSidebarCollapse() {
+            if (window.innerWidth <= 900) {
+                toggleMobileSidebar();
+                return;
+            }
+            const sidebar = document.getElementById('sidebar');
+            const isCurrentlyCollapsed = sidebar.classList.contains('collapsed') || document.documentElement.classList.contains('sidebar-collapsed-mode');
+            if (isCurrentlyCollapsed) {
+                sidebar.classList.remove('collapsed');
+                document.documentElement.classList.remove('sidebar-collapsed-mode');
+                try { localStorage.setItem('crh_sidebar_collapsed', 'false'); } catch(e) {}
+            } else {
+                sidebar.classList.add('collapsed');
+                document.documentElement.classList.add('sidebar-collapsed-mode');
+                try { localStorage.setItem('crh_sidebar_collapsed', 'true'); } catch(e) {}
+            }
+        }
+
+        // Mobile Drawer Toggle
+        function toggleMobileSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            sidebar.classList.toggle('mobile-open');
+            overlay.classList.toggle('active');
+        }
+
+        // Expandable Reports Submenu (Like LAN)
+        function toggleReportsSubmenu(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const submenu = document.getElementById('reports-submenu');
+            const chevron = document.getElementById('reports-chevron');
+            if (!submenu) return;
+            const isOpen = submenu.style.display === 'block';
+            submenu.style.display = isOpen ? 'none' : 'block';
+            if (chevron) {
+                chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+            }
+        }
+
+        // Branch Mode Dropdown
+        function toggleBranchDropdown(e) {
+            e.stopPropagation();
+            const menu = document.getElementById('branch-dropdown-menu');
+            if (menu) {
+                menu.style.display = menu.style.display === 'flex' ? 'none' : 'flex';
+            }
+        }
+
+        function switchBranchScope(branchId) {
+            try {
+                const url = new URL(window.location.href);
+                if (!branchId || branchId === 'ALL') {
+                    url.searchParams.set('branch', 'ALL');
+                } else {
+                    url.searchParams.set('branch', branchId);
+                }
+                window.location.href = url.toString();
+            } catch(e) {
+                window.location.search = `?branch=${branchId}`;
+            }
+        }
+
+        // User Account Menu Dropdown (Top-Right)
+        window.isUserMenuOpen = false;
+        function toggleUserMenu(e) {
+            e.stopPropagation();
+            const menu = document.getElementById('userMenuDropdown');
+            const chevron = document.getElementById('userMenuChevron');
+            if (!menu) return;
+            window.isUserMenuOpen = menu.style.display !== 'block';
+            menu.style.display = window.isUserMenuOpen ? 'block' : 'none';
+            if (chevron) {
+                chevron.style.transform = window.isUserMenuOpen ? 'rotate(180deg)' : 'rotate(0deg)';
+            }
+        }
+
+        function closeUserMenu() {
+            const menu = document.getElementById('userMenuDropdown');
+            const chevron = document.getElementById('userMenuChevron');
+            if (menu) menu.style.display = 'none';
+            if (chevron) chevron.style.transform = 'rotate(0deg)';
+            window.isUserMenuOpen = false;
+        }
+
+        // User Profile Modal (Like LAN)
+        function openUserProfileModal(tab) {
+            const modal = document.getElementById('userProfileModal');
+            if (modal) {
+                modal.classList.add('active');
+                switchProfileModalTab(tab || 'info');
+            }
+        }
+
+        function closeUserProfileModal() {
+            const modal = document.getElementById('userProfileModal');
+            if (modal) modal.classList.remove('active');
+        }
+
+        function handleProfileModalBackdrop(e) {
+            if (e.target.id === 'userProfileModal') {
+                closeUserProfileModal();
+            }
+        }
+
+        function switchProfileModalTab(tab) {
+            const formInfo = document.getElementById('profileInfoForm');
+            const formSecurity = document.getElementById('profileSecurityForm');
+            const btnInfo = document.getElementById('tabBtnInfo');
+            const btnSecurity = document.getElementById('tabBtnSecurity');
+
+            if (tab === 'security') {
+                formInfo.style.display = 'none';
+                formSecurity.style.display = 'flex';
+                btnInfo.style.borderBottomColor = 'transparent';
+                btnInfo.style.color = '#94a3b8';
+                btnSecurity.style.borderBottomColor = '#38bdf8';
+                btnSecurity.style.color = '#38bdf8';
+            } else {
+                formInfo.style.display = 'flex';
+                formSecurity.style.display = 'none';
+                btnInfo.style.borderBottomColor = 'var(--teal-500)';
+                btnInfo.style.color = 'var(--teal-500)';
+                btnSecurity.style.borderBottomColor = 'transparent';
+                btnSecurity.style.color = '#94a3b8';
+            }
+        }
+
+        // Profile Form AJAX Submission
+        function submitProfileInfo(e) {
+            e.preventDefault();
+            const form = document.getElementById('profileInfoForm');
+            const formData = new FormData(form);
+
+            fetch('/accounts/profile/update/', {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.type === 'success') {
+                    Swal.fire({
+                        title: data.title,
+                        text: data.message,
+                        icon: 'success',
+                        background: '#1e293b',
+                        color: '#f1f5f9',
+                        confirmButtonColor: '#0d9488'
+                    });
+                    if (data.full_name) {
+                        const topName = document.getElementById('topbarUserName');
+                        const ddName = document.getElementById('ddUserFullName');
+                        if (topName) topName.textContent = data.full_name;
+                        if (ddName) ddName.textContent = data.full_name;
+                    }
+                    closeUserProfileModal();
+                } else {
+                    Swal.fire({
+                        title: data.title || 'Error',
+                        text: data.message,
+                        icon: 'error',
+                        background: '#1e293b',
+                        color: '#f1f5f9',
+                        confirmButtonColor: '#f43f5e'
+                    });
+                }
+            })
+            .catch(err => {
+                Swal.fire({
+                    title: 'Update Error',
+                    text: 'Failed to update profile details.',
+                    icon: 'error',
+                    background: '#1e293b',
+                    color: '#f1f5f9'
+                });
+            });
+        }
+
+        function submitPasswordChange(e) {
+            e.preventDefault();
+            const form = document.getElementById('profileSecurityForm');
+            const formData = new FormData(form);
+
+            fetch('/accounts/profile/password/', {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.type === 'success') {
+                    Swal.fire({
+                        title: data.title,
+                        text: data.message,
+                        icon: 'success',
+                        background: '#1e293b',
+                        color: '#f1f5f9',
+                        confirmButtonColor: '#0d9488'
+                    });
+                    form.reset();
+                    closeUserProfileModal();
+                } else {
+                    Swal.fire({
+                        title: data.title || 'Error',
+                        text: data.message,
+                        icon: 'warning',
+                        background: '#1e293b',
+                        color: '#f1f5f9',
+                        confirmButtonColor: '#f59e0b'
+                    });
+                }
+            })
+            .catch(err => {
+                Swal.fire({
+                    title: 'Password Error',
+                    text: 'Failed to update password.',
+                    icon: 'error',
+                    background: '#1e293b',
+                    color: '#f1f5f9'
+                });
+            });
+        }
+
+        // Representation Dropdown Switcher
+        function toggleRepresentationDropdown(e) {
+            e.stopPropagation();
+            const menu = document.getElementById('representationDropdownMenu');
+            if (menu) {
+                menu.style.display = menu.style.display === 'flex' ? 'none' : 'flex';
+            }
+        }
+
+        // Global Click listener for closing menus
+        document.addEventListener('click', function(e) {
+            // Close branch dropdown
+            const branchMenu = document.getElementById('branch-dropdown-menu');
+            if (branchMenu && !e.target.closest('#branch-mode-container')) {
+                branchMenu.style.display = 'none';
+            }
+
+            // Close representation dropdown
+            const repMenu = document.getElementById('representationDropdownMenu');
+            if (repMenu && !e.target.closest('#representationSwitcherContainer')) {
+                repMenu.style.display = 'none';
+            }
+
+            // Close user menu
+            const userMenu = document.getElementById('userMenuDropdown');
+            if (userMenu && !e.target.closest('#userMenuContainer')) {
+                closeUserMenu();
+            }
+        });
+
+        // Initialize state on DOM ready
+        document.addEventListener('DOMContentLoaded', function() {
+            const isSaved = localStorage.getItem('crh_sidebar_collapsed') === 'true';
+            const sidebar = document.getElementById('sidebar');
+            if (sidebar && isSaved && window.innerWidth > 900) {
+                sidebar.classList.add('collapsed');
+                document.documentElement.classList.add('sidebar-collapsed-mode');
+            }
+
+            // Auto-rotate reports chevron if already on reports page
+            if (window.location.pathname.startsWith('/reports/')) {
+                const chevron = document.getElementById('reports-chevron');
+                if (chevron) chevron.style.transform = 'rotate(180deg)';
+                const submenu = document.getElementById('reports-submenu');
+                if (submenu) submenu.style.display = 'block';
+            }
+
+            // Auto-close mobile drawer when any navigation link is clicked
+            document.querySelectorAll('#sidebar .nav-item, #sidebar .sub-nav-link').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    if (window.innerWidth <= 900 && !link.onclick) {
+                        const sidebar = document.getElementById('sidebar');
+                        const overlay = document.getElementById('sidebar-overlay');
+                        if (sidebar && sidebar.classList.contains('mobile-open')) {
+                            sidebar.classList.remove('mobile-open');
+                            if (overlay) overlay.classList.remove('active');
+                        }
+                    }
+                });
+            });
+
+            // Close mobile menu or open modals on Escape key
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    const sidebar = document.getElementById('sidebar');
+                    const overlay = document.getElementById('sidebar-overlay');
+                    if (sidebar && sidebar.classList.contains('mobile-open')) {
+                        sidebar.classList.remove('mobile-open');
+                        if (overlay) overlay.classList.remove('active');
+                    }
+                    closeUserMenu();
+                    closeUserProfileModal();
+                }
+            });
+        });
+    </script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

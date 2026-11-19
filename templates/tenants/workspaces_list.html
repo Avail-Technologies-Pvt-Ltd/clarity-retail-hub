@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Select Dashboard &bull; Clarity Retail</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-base: #0b1120;
+            --bg-surface: #0f172a;
+            --bg-card: #1e293b;
+            --bg-card-hover: #24344d;
+            --border-color: #334155;
+            --teal-500: #14b8a6;
+            --teal-600: #0d9488;
+            --teal-400: #2dd4bf;
+            --indigo-500: #6366f1;
+            --emerald-500: #10b981;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body {
+            background-color: var(--bg-base);
+            color: #f1f5f9;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Top Navigation Header */
+        header {
+            background: var(--bg-surface);
+            border-bottom: 1px solid var(--border-color);
+            padding: 14px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .brand-wrap {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+        }
+        .brand-badge {
+            background: linear-gradient(135deg, #0d9488, #14b8a6);
+            color: #ffffff;
+            font-weight: 800;
+            font-size: .8rem;
+            letter-spacing: .08em;
+            padding: 4px 10px;
+            border-radius: 6px;
+        }
+        .brand-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #f1f5f9;
+        }
+        .user-nav {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        /* Main Container */
+        main {
+            flex: 1;
+            max-width: 980px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 48px 24px;
+        }
+
+        .page-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .page-header h1 {
+            font-size: 1.85rem;
+            font-weight: 800;
+            color: #f8fafc;
+            letter-spacing: -0.02em;
+        }
+        .page-header p {
+            color: #94a3b8;
+            font-size: .95rem;
+            margin-top: 6px;
+        }
+
+        .section-label {
+            font-size: .75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            color: #94a3b8;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            text-align: center;
+        }
+
+        /* Choice Cards Grid Centered */
+        .choices-grid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: stretch;
+            gap: 24px;
+            margin-bottom: 40px;
+        }
+
+        .choice-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            width: 320px;
+            min-width: 280px;
+            max-width: 360px;
+            flex: 1 1 300px;
+            transition: all .15s ease;
+            text-decoration: none;
+            color: inherit;
+        }
+        .choice-card:hover {
+            border-color: var(--teal-500);
+            background: var(--bg-card-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 12px 24px -10px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Special Styled Cards */
+        .card-system-admin {
+            background: linear-gradient(180deg, #1e293b 0%, #1e1b4b 100%);
+            border: 1px solid #6366f1;
+        }
+        .card-system-admin:hover {
+            border-color: #818cf8;
+            box-shadow: 0 12px 24px -10px rgba(99, 102, 241, 0.4);
+        }
+
+        .card-django-admin {
+            background: linear-gradient(180deg, #1e293b 0%, #064e3b 100%);
+            border: 1px solid #10b981;
+        }
+        .card-django-admin:hover {
+            border-color: #34d399;
+            box-shadow: 0 12px 24px -10px rgba(16, 185, 129, 0.4);
+        }
+
+        .card-top {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 14px;
+        }
+        .card-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            flex-shrink: 0;
+        }
+        .card-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #f8fafc;
+            line-height: 1.25;
+        }
+        .card-desc {
+            font-size: .8rem;
+            color: #94a3b8;
+            margin-top: 3px;
+        }
+
+        .card-footer {
+            margin-top: 20px;
+            padding-top: 14px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: .85rem;
+            font-weight: 600;
+        }
+
+        /* ── Mobile Friendly Enhancements ── */
+        @media (max-width: 768px) {
+            header {
+                padding: 12px 16px;
+                flex-wrap: wrap;
+                gap: 12px;
+            }
+            .user-nav {
+                width: 100%;
+                justify-content: space-between;
+                font-size: .78rem;
+            }
+            main {
+                padding: 24px 14px;
+            }
+            .page-header h1 {
+                font-size: 1.45rem;
+            }
+            .page-header p {
+                font-size: .85rem;
+            }
+            .choices-grid {
+                gap: 16px;
+            }
+            .choice-card {
+                width: 100% !important;
+                min-width: 100% !important;
+                max-width: 100% !important;
+                padding: 18px 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <a href="/" class="brand-wrap">
+            <span class="brand-badge">CLARITY</span>
+            <span class="brand-title">Retail Hub</span>
+        </a>
+
+        <div class="user-nav">
+            <div style="font-size:.84rem; color:#cbd5e1;">
+                Signed in as <strong style="color:var(--teal-400);">{{ user.email|default:user.username }}</strong>
+                {% if user.is_superuser %}
+                <span style="background:rgba(99,102,241,0.2); color:#a5b4fc; border:1px solid rgba(99,102,241,0.4); font-size:.68rem; padding:2px 7px; border-radius:10px; margin-left:6px; font-weight:700;">SUPERUSER</span>
+                {% elif user.is_staff %}
+                <span style="background:rgba(16,185,129,0.2); color:#6ee7b7; border:1px solid rgba(16,185,129,0.4); font-size:.68rem; padding:2px 7px; border-radius:10px; margin-left:6px; font-weight:700;">STAFF</span>
+                {% endif %}
+            </div>
+            <a href="{% url 'user_logout' %}" style="background:transparent; border:1px solid var(--border-color); color:#94a3b8; padding:6px 14px; border-radius:8px; font-size:.8rem; text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
+                <i class="fa-solid fa-arrow-right-from-bracket"></i> Sign Out
+            </a>
+        </div>
+    </header>
+
+    <main>
+        <div class="page-header">
+            <h1>Select What to Log In As</h1>
+            <p>Choose the dashboard or tenant business workspace you want to open right now.</p>
+        </div>
+
+        <!-- 1. System Administration & Django Admin (Rendered according to privileges) -->
+        {% if user.is_superuser or user.is_staff %}
+        <div class="section-label">
+            <i class="fa-solid fa-shield-halved"></i> Platform Administration Options
+        </div>
+        <div class="choices-grid">
+            <!-- System Admin Option -->
+            {% if user.is_superuser %}
+            <a href="{% url 'system_admin_dashboard' %}" class="choice-card card-system-admin">
+                <div>
+                    <div class="card-top">
+                        <div class="card-icon" style="background: rgba(99, 102, 241, 0.25); color: #a5b4fc;">
+                            <i class="fa-solid fa-gauge-high"></i>
+                        </div>
+                        <div>
+                            <div class="card-title">System Admin</div>
+                            <div class="card-desc">Platform Control &amp; Tenant Operations</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer" style="color:#c7d2fe;">
+                    <span>Open System Dashboard</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </div>
+            </a>
+            {% endif %}
+
+            <!-- Django Admin Option -->
+            <a href="/admin/" target="_blank" class="choice-card card-django-admin">
+                <div>
+                    <div class="card-top">
+                        <div class="card-icon" style="background: rgba(16, 185, 129, 0.25); color: #6ee7b7;">
+                            <i class="fa-solid fa-sliders"></i>
+                        </div>
+                        <div>
+                            <div class="card-title">Django Admin</div>
+                            <div class="card-desc">Core Models &amp; User Database</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer" style="color:#6ee7b7;">
+                    <span>Open Django Admin</span>
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                </div>
+            </a>
+        </div>
+        {% endif %}
+
+        <!-- 2. Accessible Tenant Businesses (Rendered according to privileges) -->
+        <div class="section-label">
+            <i class="fa-solid fa-shop"></i> Tenant Businesses
+        </div>
+        <div class="choices-grid">
+            {% for ws in workspaces %}
+            <a href="{{ request.scheme }}://{{ ws.domain }}{{ port_str|default:port_suffix }}/sso/auth/?token={{ ws.sso_token }}" class="choice-card">
+                <div>
+                    <div class="card-top">
+                        <div class="card-icon" style="background: rgba(20, 184, 166, 0.15); color: #14b8a6;">
+                            <i class="fa-solid fa-shop"></i>
+                        </div>
+                        <div>
+                            <div class="card-title">{{ ws.company.name }}</div>
+                            <div class="card-desc">{{ ws.role_display }}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer" style="color:var(--teal-400);">
+                    <span>Launch Tenant Dashboard</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </div>
+            </a>
+            {% empty %}
+            <div style="grid-column: 1 / -1; text-align:center; padding:48px 24px; background:var(--bg-card); border-radius:14px; border:1px solid var(--border-color); color:#94a3b8;">
+                <i class="fa-solid fa-store-slash" style="font-size:2rem; margin-bottom:12px; display:block; color:#64748b;"></i>
+                <p>No tenant businesses are assigned to your account.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </main>
+</body>
+</html>

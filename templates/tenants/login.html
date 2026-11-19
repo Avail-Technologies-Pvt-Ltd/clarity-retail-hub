@@ -1,0 +1,217 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In — Clarity Retail Hub</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-base: #0b1120;
+            --bg-surface: #0f172a;
+            --bg-card: #1e293b;
+            --border-color: #334155;
+            --teal-500: #14b8a6;
+            --teal-600: #0d9488;
+            --teal-400: #2dd4bf;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body {
+            background-color: var(--bg-base);
+            color: #f1f5f9;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+        .login-wrapper {
+            max-width: 440px;
+            width: 100%;
+        }
+        .login-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 40px 32px;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.6);
+        }
+        .suite-breadcrumb {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        .brand-badge {
+            background: linear-gradient(135deg, #0d9488, #14b8a6);
+            color: #ffffff;
+            font-weight: 800;
+            font-size: .8rem;
+            letter-spacing: .08em;
+            padding: 5px 12px;
+            border-radius: 6px;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        .input-label {
+            display: block;
+            font-size: .78rem;
+            font-weight: 600;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            margin-bottom: 8px;
+        }
+        .input-field {
+            width: 100%;
+            background: #0f172a;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px 14px;
+            color: #f1f5f9;
+            font-size: .92rem;
+            outline: none;
+            transition: border-color .15s ease;
+        }
+        .input-field:focus {
+            border-color: var(--teal-500);
+            box-shadow: 0 0 0 1px var(--teal-500);
+        }
+        .btn-submit {
+            width: 100%;
+            background: var(--teal-600);
+            color: #ffffff;
+            border: none;
+            border-radius: 8px;
+            padding: 13px;
+            font-size: .95rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all .15s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 4px 14px -2px rgba(13, 148, 136, 0.4);
+        }
+        .btn-submit:hover {
+            background: var(--teal-500);
+            transform: translateY(-1px);
+        }
+        .error-alert {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #fca5a5;
+            padding: 12px 14px;
+            border-radius: 8px;
+            font-size: .84rem;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: #64748b;
+            text-decoration: none;
+            font-size: .82rem;
+            margin-bottom: 18px;
+            transition: color .15s ease;
+        }
+        .back-link:hover {
+            color: #cbd5e1;
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 16px 12px;
+                justify-content: flex-start;
+                padding-top: 24px;
+            }
+            .login-card {
+                padding: 24px 18px;
+                border-radius: 12px;
+            }
+            .input-field {
+                font-size: 16px;
+            }
+            .suite-breadcrumb h1 {
+                font-size: 1.25rem !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-wrapper">
+        <a href="/" class="back-link">
+            <i class="fa-solid fa-arrow-left"></i> Back to Clarity Retail Overview
+        </a>
+
+        <div class="login-card">
+            <div class="suite-breadcrumb">
+                <div style="margin-bottom: 14px; display: flex; justify-content: center;">
+                    <img src="{% static 'images/clarity-retail-logo.png' %}" alt="Clarity Retail" style="max-height: 80px; max-width: 240px; object-fit: contain; filter: drop-shadow(0 6px 18px rgba(0,0,0,0.4));">
+                </div>
+                <h1 style="font-size: 1.4rem; font-weight: 800; color: #f1f5f9; letter-spacing: -0.02em;">Retail Cloud Hub</h1>
+                <p style="color: #94a3b8; font-size: .84rem; margin-top: 6px;">
+                    Avail Technologies &bull; Enterprise Multi-Branch Headquarters
+                </p>
+            </div>
+
+            {% if error_message %}
+            <div class="error-alert">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                <span>{{ error_message }}</span>
+            </div>
+            {% endif %}
+
+            <form method="POST" action="{% url 'user_login' %}">
+                {% csrf_token %}
+                {% if request.GET.next %}
+                <input type="hidden" name="next" value="{{ request.GET.next }}">
+                {% endif %}
+                <div class="input-group">
+                    <label class="input-label">Username or Email Address</label>
+                    <div style="position:relative;">
+                        <input type="text" name="email" class="input-field" placeholder="e.g. root or root@gmail.com" required autofocus style="padding-left:38px;">
+                        <i class="fa-solid fa-user" style="position:absolute; left:14px; top:50%; transform:translateY(-50%); color:#64748b; font-size:.85rem;"></i>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                        <label class="input-label" style="margin-bottom:0;">Password</label>
+                        <a href="{% url 'password_recovery' %}" style="font-size:.76rem; color:var(--teal-400); text-decoration:none; font-weight:600;">
+                            Forgot Password?
+                        </a>
+                    </div>
+                    <div style="position:relative;">
+                        <input type="password" name="password" class="input-field" placeholder="••••••••••••" required style="padding-left:38px;">
+                        <i class="fa-solid fa-lock" style="position:absolute; left:14px; top:50%; transform:translateY(-50%); color:#64748b; font-size:.85rem;"></i>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-submit">
+                    <i class="fa-solid fa-right-to-bracket"></i> Sign In to Workspaces
+                </button>
+            </form>
+
+            <div style="margin-top: 18px; padding: 10px 14px; background: rgba(20, 184, 166, 0.08); border: 1px dashed rgba(20, 184, 166, 0.3); border-radius: 8px; text-align: center; font-size: .8rem; color: #94a3b8;">
+                <i class="fa-solid fa-key" style="color:var(--teal-400); margin-right:4px;"></i> Master Superuser: <strong style="color:#f1f5f9;">root</strong> &bull; Password: <strong style="color:var(--teal-400);">toor</strong> (or <strong>root</strong>)
+            </div>
+
+            <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border-color); text-align: center;">
+                <p style="color: #64748b; font-size: .8rem;">
+                    Part of the <strong>Clarity Community Suite</strong>
+                </p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

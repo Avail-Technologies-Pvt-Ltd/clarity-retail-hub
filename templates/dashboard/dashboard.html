@@ -1,0 +1,740 @@
+{% extends 'partials/base.html' %}
+{% block title %}Dashboard — {{ company.name }}{% endblock %}
+{% block nav_dashboard %}active{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* ── Responsive View Segregation ── */
+    @media (min-width: 769px) {
+        .mobile-pulse-view { display: none !important; }
+        .desktop-full-view { display: block !important; }
+    }
+    @media (max-width: 768px) {
+        .desktop-full-view { display: none !important; }
+        .mobile-pulse-view { display: block !important; }
+    }
+
+    /* ── Desktop Full Dashboard Styles ── */
+    .dash-actions-wrap {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    .dual-card-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+    @media (max-width: 900px) {
+        .dual-card-grid {
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+    }
+
+    /* ── Mobile Executive Reporting Pulse Styles ── */
+    .mobile-pulse-view {
+        padding-bottom: 24px;
+    }
+    .period-segmented-bar {
+        display: flex;
+        background: #0f172a;
+        border: 1px solid #334155;
+        border-radius: 12px;
+        padding: 3px;
+        gap: 3px;
+        margin-bottom: 14px;
+    }
+    .period-btn {
+        flex: 1;
+        background: transparent;
+        border: none;
+        color: #94a3b8;
+        font-size: .8rem;
+        font-weight: 600;
+        padding: 8px 4px;
+        border-radius: 9px;
+        cursor: pointer;
+        text-align: center;
+        transition: all .15s ease;
+    }
+    .period-btn.active {
+        background: #14b8a6;
+        color: #ffffff;
+        font-weight: 700;
+        box-shadow: 0 2px 8px rgba(20, 184, 166, 0.4);
+    }
+
+    .mobile-hero-kpi {
+        background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+        border: 1px solid #334155;
+        border-radius: 16px;
+        padding: 22px 16px;
+        text-align: center;
+        margin-bottom: 16px;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+    }
+    .m-hero-sub {
+        font-size: .75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .08em;
+        color: #94a3b8;
+        margin-bottom: 4px;
+    }
+    .m-hero-value {
+        font-size: 2.2rem;
+        font-weight: 800;
+        color: #10b981;
+        letter-spacing: -0.02em;
+        line-height: 1.1;
+        margin-bottom: 12px;
+    }
+    .m-hero-chips {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    .m-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: .74rem;
+        font-weight: 600;
+        padding: 4px 10px;
+        border-radius: 99px;
+        background: #0f172a;
+        border: 1px solid #334155;
+    }
+    .m-chip-cash {
+        color: #34d399;
+        border-color: rgba(52, 211, 153, 0.35);
+        background: rgba(16, 185, 129, 0.1);
+    }
+    .m-chip-count {
+        color: #38bdf8;
+        border-color: rgba(56, 189, 248, 0.35);
+        background: rgba(56, 189, 248, 0.1);
+    }
+    .m-chip-exp {
+        color: #f43f5e;
+        border-color: rgba(244, 63, 94, 0.35);
+        background: rgba(244, 63, 94, 0.1);
+    }
+
+    .mobile-branch-section {
+        margin-bottom: 16px;
+    }
+    .m-sec-title-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 10px;
+        padding: 0 4px;
+    }
+    .m-sec-title {
+        font-size: .95rem;
+        font-weight: 700;
+        color: #f1f5f9;
+    }
+    .m-sec-meta {
+        font-size: .72rem;
+        color: #94a3b8;
+    }
+
+    .mobile-branch-card {
+        background: #1e293b;
+        border: 1px solid #334155;
+        border-radius: 12px;
+        padding: 13px 14px;
+        margin-bottom: 10px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    }
+    .m-card-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 8px;
+    }
+    .m-store-name {
+        font-size: .88rem;
+        font-weight: 700;
+        color: #f8fafc;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .m-dot-online {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: #10b981;
+        box-shadow: 0 0 6px rgba(16,185,129,0.7);
+        flex-shrink: 0;
+    }
+    .m-main-tag {
+        font-size: .62rem;
+        background: rgba(20,184,166,0.18);
+        color: #2dd4bf;
+        border: 1px solid rgba(20,184,166,0.35);
+        padding: 1px 5px;
+        border-radius: 3px;
+        font-weight: 700;
+    }
+    .m-store-sales {
+        font-size: 1.02rem;
+        font-weight: 800;
+        color: #2dd4bf;
+        text-align: right;
+    }
+    .m-store-sub-sales {
+        font-size: .68rem;
+        color: #94a3b8;
+        text-align: right;
+    }
+    .m-bar-track {
+        width: 100%;
+        height: 5px;
+        background: #0f172a;
+        border-radius: 99px;
+        overflow: hidden;
+        margin-top: 8px;
+        margin-bottom: 6px;
+    }
+    .m-bar-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #0d9488, #2dd4bf);
+        border-radius: 99px;
+        transition: width .25s ease;
+    }
+    .m-bar-info {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: .68rem;
+        color: #94a3b8;
+    }
+
+    .mobile-footer-card {
+        background: #0f172a;
+        border: 1px solid #334155;
+        border-radius: 14px;
+        padding: 18px 14px;
+        text-align: center;
+        margin-top: 16px;
+    }
+    .m-pill-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 8px 16px;
+        border-radius: 99px;
+        font-size: .8rem;
+        font-weight: 600;
+        text-decoration: none;
+        border: 1px solid #334155;
+        color: #cbd5e1;
+        background: #1e293b;
+        transition: all .15s ease;
+    }
+    .m-pill-btn:hover {
+        border-color: #14b8a6;
+        color: #2dd4bf;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- =================================================================== -->
+<!-- 1. MOBILE EXECUTIVE REPORTING PULSE (Strictly <= 768px)            -->
+<!-- =================================================================== -->
+<div class="mobile-pulse-view">
+    <!-- Clean Minimalist Header -->
+    <div style="margin-bottom: 14px; padding: 0 2px;">
+        <h1 style="font-size: 1.35rem; font-weight: 800; color: #f8fafc; letter-spacing: -0.01em; margin-bottom: 2px;">
+            {{ company.name }}
+        </h1>
+        <p style="font-size: .78rem; color: #94a3b8; margin-bottom: 0;">Executive Sales &amp; Multi-Branch Pulse</p>
+    </div>
+
+    {% if active_branch %}
+    <div style="background:#0f172a; border:1px solid #0d9488; border-radius:10px; padding:8px 12px; margin-bottom:12px; display:flex; align-items:center; justify-content:space-between; font-size:.78rem;">
+        <span style="color:#f1f5f9;">Filter: <strong>{{ active_branch.name }}</strong></span>
+        <a href="?branch=ALL" style="color:#38bdf8; text-decoration:none; font-weight:600;">All Branches &times;</a>
+    </div>
+    {% endif %}
+
+    <!-- Segmented Time Period Toggle (Today, Week, Month, Year) -->
+    <div class="period-segmented-bar">
+        <button type="button" class="period-btn active" data-period="today" onclick="switchMobilePeriod('today')">Today</button>
+        <button type="button" class="period-btn" data-period="week" onclick="switchMobilePeriod('week')">This Week</button>
+        <button type="button" class="period-btn" data-period="month" onclick="switchMobilePeriod('month')">This Month</button>
+        <button type="button" class="period-btn" data-period="year" onclick="switchMobilePeriod('year')">This Year</button>
+    </div>
+
+    <!-- Essential Hero Sales Card -->
+    <div class="mobile-hero-kpi">
+        <div class="m-hero-sub" id="mPeriodLabel">Today's Total Sales</div>
+        <div class="m-hero-value" id="mHeroGross">{{ currency_symbol }}{{ today_gross|floatformat:2 }}</div>
+        
+        <div class="m-hero-chips">
+            <div class="m-chip m-chip-cash">
+                <span>Net Cash: <strong id="mHeroNet">{{ currency_symbol }}{{ today_net_cashflow|floatformat:2 }}</strong></span>
+            </div>
+            <div class="m-chip m-chip-count">
+                <i class="fa-solid fa-receipt" style="font-size:.65rem;"></i>
+                <span><strong id="mHeroCount">{{ today_sales_count }}</strong> sales</span>
+            </div>
+            <div class="m-chip m-chip-exp">
+                <span>Exp: <strong id="mHeroExp">{{ currency_symbol }}{{ today_expenses|floatformat:2 }}</strong></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Branch Sales Performance (Correlated to Branches) -->
+    <div class="mobile-branch-section">
+        <div class="m-sec-title-row">
+            <span class="m-sec-title">Sales by Store</span>
+            <span class="m-sec-meta">{{ active_branches_count }} online</span>
+        </div>
+
+        {% for item in branch_performance %}
+        <div class="mobile-branch-card"
+             data-branch-id="{{ item.branch.id }}"
+             data-today-gross="{{ item.today_gross }}"
+             data-today-count="{{ item.today_count }}"
+             data-today-pct="{{ item.pct_today }}"
+             data-week-gross="{{ item.week_gross }}"
+             data-week-count="{{ item.week_count }}"
+             data-week-pct="{{ item.pct_week }}"
+             data-month-gross="{{ item.month_gross }}"
+             data-month-count="{{ item.month_count }}"
+             data-month-pct="{{ item.pct_month }}"
+             data-year-gross="{{ item.year_gross }}"
+             data-year-count="{{ item.year_count }}"
+             data-year-pct="{{ item.pct_year }}">
+
+            <div class="m-card-top">
+                <div class="m-store-name">
+                    <span class="m-dot-online"></span>
+                    <span>{{ item.branch.name }}</span>
+                    {% if item.branch.is_main_branch %}
+                    <span class="m-main-tag"><i class="fa-solid fa-crown" style="font-size:.58rem;"></i> MAIN</span>
+                    {% endif %}
+                </div>
+                <div>
+                    <div class="m-store-sales" id="bGross_{{ item.branch.id }}">{{ currency_symbol }}{{ item.today_gross|floatformat:2 }}</div>
+                    <div class="m-store-sub-sales" id="bCount_{{ item.branch.id }}">{{ item.today_count }} sales</div>
+                </div>
+            </div>
+
+            <div class="m-bar-track">
+                <div class="m-bar-fill" id="bBar_{{ item.branch.id }}" style="width: {% if item.pct_today > 0 %}{{ item.pct_today }}{% else %}2{% endif %}%;"></div>
+            </div>
+            <div class="m-bar-info">
+                <span style="font-family:monospace; color:#38bdf8;">{{ item.branch.branch_code }}</span>
+                <span id="bPct_{{ item.branch.id }}">{{ item.pct_today }}% of chain</span>
+            </div>
+        </div>
+        {% empty %}
+        <div style="background:#1e293b; border:1px solid #334155; border-radius:12px; padding:20px; text-align:center; color:#94a3b8; font-size:.82rem;">
+            No store branches registered yet.
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Mobile Simplified Action Drawer & Desktop Reference -->
+    <div class="mobile-footer-card">
+        <div style="font-size: .8rem; font-weight: 700; color: #cbd5e1; margin-bottom: 6px;">
+            <i class="fa-solid fa-desktop" style="color: #38bdf8; margin-right: 4px;"></i>
+            Detailed Reports &amp; Ledger Auditing
+        </div>
+        <p style="font-size: .74rem; color: #94a3b8; line-height: 1.4; margin-bottom: 14px;">
+            Line-item receipt journals, fiscal tax splits, hardware locks, and CSV exports are formatted for larger desktop screens.
+        </p>
+        <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
+            <a href="/reports/" class="m-pill-btn">
+                <i class="fa-solid fa-chart-column"></i> All Reports
+            </a>
+            <a href="/reports/stock-matrix/" class="m-pill-btn" style="border-color:#0d9488; color:#2dd4bf;">
+                <i class="fa-solid fa-table-cells"></i> Stock Matrix
+            </a>
+            <a href="/branches/transfers/" class="m-pill-btn">
+                <i class="fa-solid fa-truck-fast"></i> Transfers
+            </a>
+        </div>
+    </div>
+</div>
+
+
+<!-- =================================================================== -->
+<!-- 2. DESKTOP FULL DASHBOARD (Strictly > 768px)                         -->
+<!-- =================================================================== -->
+<div class="desktop-full-view">
+    <!-- Executive Header -->
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; gap:16px;">
+        <div>
+            <h1 class="hub-title">{{ company.name }}</h1>
+            <p class="hub-subtitle" style="margin-bottom:0;">Multi-Branch Cloud Access Point &amp; Real-Time Reports Portal</p>
+        </div>
+        <div class="dash-actions-wrap">
+            <a href="/reports/" class="btn-hub-primary">
+                <i class="fa-solid fa-chart-column"></i> Chain Reports
+            </a>
+            <a href="/reports/stock-matrix/" class="btn-hub-ghost" style="border-color:#0d9488; color:#2dd4bf;">
+                <i class="fa-solid fa-table-cells"></i> Stock Matrix
+            </a>
+            <a href="/branches/transfers/" class="btn-hub-ghost">
+                <i class="fa-solid fa-arrows-split-up-and-left"></i> Transfer Buffer
+            </a>
+            <a href="/branches/" class="btn-hub-ghost">
+                <i class="fa-solid fa-shop"></i> Store Branches
+            </a>
+        </div>
+    </div>
+
+    {% if active_branch %}
+    <div style="background:#0f172a; border:1px solid #0d9488; border-radius:10px; padding:10px 16px; margin-bottom:18px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+            <span style="width:8px; height:8px; border-radius:50%; background:#10b981; box-shadow:0 0 8px rgba(16,185,129,0.7);"></span>
+            <span style="font-size:.85rem; color:#f1f5f9;">Active Focus: <strong>{{ active_branch.name }}</strong> [{{ active_branch.branch_code }}]</span>
+        </div>
+        <a href="?branch=ALL" class="btn-hub-ghost" style="padding:4px 10px; font-size:.75rem;">
+            <i class="fa-solid fa-network-wired"></i> Consolidated Mode
+        </a>
+    </div>
+    {% endif %}
+
+    <!-- 4 Prioritized Business KPI Cards -->
+    <div class="stats-grid">
+        <!-- Card 1: Today's Revenue & Net Cashflow -->
+        <div class="stat-card">
+            <div>
+                <div class="stat-lbl">Today's Revenue</div>
+                <div class="stat-val" style="color:#10b981;">{{ currency_symbol }}{{ today_gross|floatformat:2 }}</div>
+                <div style="font-size:.75rem; color:#94a3b8; margin-top:2px;">
+                    <span style="color:#38bdf8; font-weight:600;">{{ today_sales_count }}</span> receipts &bull; Net: <span style="color:#34d399; font-weight:600;">{{ currency_symbol }}{{ today_net_cashflow|floatformat:2 }}</span>
+                </div>
+            </div>
+            <div class="stat-icon" style="background:rgba(16,185,129,0.12); color:#10b981;">
+                <i class="fa-solid fa-sack-dollar"></i>
+            </div>
+        </div>
+
+        <!-- Card 2: Month-to-Date Revenue -->
+        <div class="stat-card">
+            <div>
+                <div class="stat-lbl">Month-to-Date Gross</div>
+                <div class="stat-val" style="color:#38bdf8;">{{ currency_symbol }}{{ mtd_gross|floatformat:2 }}</div>
+                <div style="font-size:.75rem; color:#94a3b8; margin-top:2px;">
+                    <span style="color:#f1f5f9; font-weight:600;">{{ mtd_sales_count }}</span> invoices this month
+                </div>
+            </div>
+            <div class="stat-icon" style="background:rgba(56,189,248,0.12); color:#38bdf8;">
+                <i class="fa-solid fa-calendar-days"></i>
+            </div>
+        </div>
+
+        <!-- Card 3: Inter-Branch Stock Buffer -->
+        <div class="stat-card">
+            <div>
+                <div class="stat-lbl">Stock Transfer Buffer</div>
+                <div class="stat-val" style="color:#f59e0b;">
+                    {{ in_transit_count }} <span style="font-size:.9rem; font-weight:600; color:#fbbf24;">In Transit</span>
+                </div>
+                <div style="font-size:.75rem; color:#94a3b8; margin-top:2px;">
+                    <a href="/branches/transfers/" style="color:#38bdf8; text-decoration:none; font-weight:600;">
+                        {{ completed_transfers_count }} delivered &bull; View Buffer <i class="fa-solid fa-chevron-right" style="font-size:.65rem;"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="stat-icon" style="background:rgba(245,158,11,0.14); color:#f59e0b;">
+                <i class="fa-solid fa-truck-fast"></i>
+            </div>
+        </div>
+
+        <!-- Card 4: Store Network & Main Branch -->
+        <div class="stat-card">
+            <div>
+                <div class="stat-lbl">Connected Store Network</div>
+                <div class="stat-val" style="color:#a855f7;">
+                    {{ active_branches_count }}/{{ total_branches_count }} <span style="font-size:.85rem; font-weight:600; color:#cbd5e1;">Online</span>
+                </div>
+                <div style="font-size:.75rem; color:#94a3b8; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:170px;">
+                    {% if main_branch %}
+                    <span style="color:#2dd4bf; font-weight:600;" title="Authoritative Main Branch"><i class="fa-solid fa-crown" style="font-size:.7rem;"></i> {{ main_branch.name }}</span>
+                    {% else %}
+                    <span style="color:#94a3b8;">Main Branch: Not Set</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="stat-icon" style="background:rgba(168,85,247,0.12); color:#a855f7;">
+                <i class="fa-solid fa-shop"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Store Branches Status -->
+    <div class="hub-card">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+            <div>
+                <h3 style="font-size:1.02rem; font-weight:700; color:#f1f5f9; margin-bottom:2px;">Store Branches &amp; Edge Sync</h3>
+                <p style="font-size:.75rem; color:#94a3b8; margin-bottom:0;">Live status from store terminals</p>
+            </div>
+            <a href="/branches/" style="color:#38bdf8; font-size:.8rem; font-weight:600; text-decoration:none;">
+                Manage <i class="fa-solid fa-chevron-right ml-1"></i>
+            </a>
+        </div>
+
+        <div class="hub-table-container">
+            <table class="hub-table" style="min-width:auto;">
+                <thead>
+                    <tr>
+                        <th>Store Code</th>
+                        <th>Store Name</th>
+                        <th>Status</th>
+                        <th>Manager</th>
+                        <th>Last Active</th>
+                        <th style="text-align:right;">Access</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for b in branches %}
+                    <tr>
+                        <td>
+                            <span style="font-family:monospace; font-weight:700; color:#38bdf8; background:#0f172a; border:1px solid #334155; padding:2px 7px; border-radius:4px; font-size:.78rem;">
+                                {{ b.branch_code }}
+                            </span>
+                            {% if b.is_main_branch %}
+                                <span style="font-size:.65rem; background:rgba(20,184,166,0.2); color:#2dd4bf; border:1px solid rgba(20,184,166,0.35); padding:1px 5px; border-radius:3px; margin-left:4px; font-weight:700;" title="Authoritative Main Branch">
+                                    <i class="fa-solid fa-crown" style="font-size:.6rem;"></i> MAIN
+                                </span>
+                            {% elif b.is_headquarters %}
+                                <span style="font-size:.65rem; background:#0d9488; color:#fff; padding:1px 5px; border-radius:3px; margin-left:4px; font-weight:600;">HQ</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div style="font-weight:600; color:#f1f5f9; font-size:.85rem;">{{ b.name }}</div>
+                            <div style="font-size:.7rem; color:#94a3b8;">{{ b.city|default:"Zimbabwe" }}</div>
+                        </td>
+                        <td>
+                            {% if b.status == 'ACTIVE' %}
+                                <span class="badge-status active"><i class="fa-solid fa-circle" style="font-size:.45rem; vertical-align:middle; margin-right:3px;"></i> Online</span>
+                            {% else %}
+                                <span class="badge-status offline">{{ b.status }}</span>
+                            {% endif %}
+                        </td>
+                        <td style="font-size:.82rem; color:#cbd5e1;">
+                            {{ b.manager_name|default:"—" }}
+                        </td>
+                        <td style="font-size:.78rem; color:#94a3b8; font-family:monospace;">
+                            {{ b.last_sync_at|date:"Y-m-d H:i"|default:"Never" }}
+                        </td>
+                        <td style="text-align:right;">
+                            <a href="?branch={{ b.id }}" class="btn-hub-ghost" style="padding:4px 10px; font-size:.75rem;">
+                                Filter Branch
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" style="text-align:center; padding:28px; color:#64748b;">
+                            No store branches configured.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Dual Grid: Recent Daily Summaries Feed & Transfer Buffer Queue -->
+    <div class="dual-card-grid">
+        
+        <!-- Panel 1: Recent Daily Summaries Feed -->
+        <div class="hub-card">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+                <div>
+                    <h3 style="font-size:1.02rem; font-weight:700; color:#f1f5f9; margin-bottom:2px;">Audited Daily Turnover</h3>
+                    <p style="font-size:.75rem; color:#94a3b8; margin-bottom:0;">End-of-day branch reports</p>
+                </div>
+                <a href="/reports/" style="color:#38bdf8; font-size:.8rem; font-weight:600; text-decoration:none;">
+                    All Reports <i class="fa-solid fa-chevron-right ml-1"></i>
+                </a>
+            </div>
+
+            <div class="hub-table-container">
+                <table class="hub-table" style="min-width:auto;">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Branch</th>
+                            <th style="text-align:right;">Gross</th>
+                            <th style="text-align:right;">Net Cash</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for sm in recent_summaries %}
+                        <tr>
+                            <td style="font-family:monospace; font-size:.78rem; color:#cbd5e1; font-weight:600;">
+                                {{ sm.summary_date|date:"Y-m-d" }}
+                            </td>
+                            <td style="font-size:.82rem; color:#f1f5f9;">
+                                {{ sm.branch.branch_code }}
+                            </td>
+                            <td style="text-align:right; font-weight:700; color:#10b981; font-size:.84rem;">
+                                {{ currency_symbol }}{{ sm.gross_sales|floatformat:2 }}
+                            </td>
+                            <td style="text-align:right; font-weight:700; color:#38bdf8; font-size:.84rem;">
+                                {{ currency_symbol }}{{ sm.net_cashflow|floatformat:2 }}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" style="text-align:center; padding:24px; color:#64748b;">
+                                No daily branch turnover summaries synced yet.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Panel 2: Inter-Branch Stock Transfer Buffer -->
+        <div class="hub-card">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+                <div>
+                    <h3 style="font-size:1.02rem; font-weight:700; color:#f1f5f9; margin-bottom:2px;">Stock Transfer Buffer</h3>
+                    <p style="font-size:.75rem; color:#94a3b8; margin-bottom:0;">Inter-branch inventory dispatches</p>
+                </div>
+                <a href="/branches/transfers/" style="color:#38bdf8; font-size:.8rem; font-weight:600; text-decoration:none;">
+                    Buffer Queue <i class="fa-solid fa-chevron-right ml-1"></i>
+                </a>
+            </div>
+
+            <div class="hub-table-container">
+                <table class="hub-table" style="min-width:auto;">
+                    <thead>
+                        <tr>
+                            <th>Ref</th>
+                            <th>Product Item</th>
+                            <th style="text-align:center;">Qty</th>
+                            <th>From &rarr; To</th>
+                            <th style="text-align:right;">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for tr in recent_transfers %}
+                        <tr>
+                            <td style="font-family:monospace; font-size:.75rem; color:#cbd5e1;">
+                                {{ tr.reference }}
+                            </td>
+                            <td>
+                                <div style="font-weight:600; color:#f1f5f9; font-size:.82rem;">{{ tr.product_name|truncatechars:18 }}</div>
+                            </td>
+                            <td style="text-align:center; font-weight:800; color:#2dd4bf; font-size:.84rem;">
+                                {{ tr.quantity|floatformat:0 }}
+                            </td>
+                            <td style="font-size:.75rem; color:#94a3b8; font-family:monospace;">
+                                {{ tr.source_branch.branch_code }} &rarr; {{ tr.destination_branch.branch_code }}
+                            </td>
+                            <td style="text-align:right;">
+                                {% if tr.status == 'IN_TRANSIT' %}
+                                    <span class="badge-status" style="background:rgba(245,158,11,0.18); color:#f59e0b; border:1px solid rgba(245,158,11,0.3); font-size:.68rem;">
+                                        <i class="fa-solid fa-truck-fast"></i> In Transit
+                                    </span>
+                                {% elif tr.status == 'RECEIVED' %}
+                                    <span class="badge-status active" style="font-size:.68rem;">
+                                        <i class="fa-solid fa-check"></i> Received
+                                    </span>
+                                {% else %}
+                                    <span class="badge-status offline" style="font-size:.68rem;">{{ tr.status }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" style="text-align:center; padding:24px; color:#64748b;">
+                                No stock transfers in buffer queue.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Dynamic Period Switching Script for Mobile -->
+<script>
+    const mobilePeriodData = {
+        today: {
+            label: "Today's Total Sales",
+            gross: "{{ currency_symbol }}{{ today_gross|floatformat:2 }}",
+            net: "{{ currency_symbol }}{{ today_net_cashflow|floatformat:2 }}",
+            count: "{{ today_sales_count }}",
+            exp: "{{ currency_symbol }}{{ today_expenses|floatformat:2 }}"
+        },
+        week: {
+            label: "This Week's Total Sales",
+            gross: "{{ currency_symbol }}{{ week_gross|floatformat:2 }}",
+            net: "{{ currency_symbol }}{{ week_net_cashflow|floatformat:2 }}",
+            count: "{{ week_sales_count }}",
+            exp: "{{ currency_symbol }}{{ week_expenses|floatformat:2 }}"
+        },
+        month: {
+            label: "This Month's Total Sales",
+            gross: "{{ currency_symbol }}{{ month_gross|floatformat:2 }}",
+            net: "{{ currency_symbol }}{{ month_net_cashflow|floatformat:2 }}",
+            count: "{{ month_sales_count }}",
+            exp: "{{ currency_symbol }}{{ month_expenses|floatformat:2 }}"
+        },
+        year: {
+            label: "This Year's Total Sales",
+            gross: "{{ currency_symbol }}{{ year_gross|floatformat:2 }}",
+            net: "{{ currency_symbol }}{{ year_net_cashflow|floatformat:2 }}",
+            count: "{{ year_sales_count }}",
+            exp: "{{ currency_symbol }}{{ year_expenses|floatformat:2 }}"
+        }
+    };
+
+    function switchMobilePeriod(period) {
+        document.querySelectorAll('.period-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.getAttribute('data-period') === period);
+        });
+
+        const p = mobilePeriodData[period];
+        if (p) {
+            document.getElementById('mPeriodLabel').textContent = p.label;
+            document.getElementById('mHeroGross').textContent = p.gross;
+            document.getElementById('mHeroNet').textContent = p.net;
+            document.getElementById('mHeroCount').textContent = p.count;
+            document.getElementById('mHeroExp').textContent = p.exp;
+        }
+
+        document.querySelectorAll('.mobile-branch-card').forEach(card => {
+            const gross = parseFloat(card.getAttribute('data-' + period + '-gross') || 0);
+            const count = card.getAttribute('data-' + period + '-count') || '0';
+            const pct = parseFloat(card.getAttribute('data-' + period + '-pct') || 0);
+            const bId = card.getAttribute('data-branch-id');
+
+            const grossEl = document.getElementById('bGross_' + bId);
+            const countEl = document.getElementById('bCount_' + bId);
+            const barEl = document.getElementById('bBar_' + bId);
+            const pctEl = document.getElementById('bPct_' + bId);
+
+            if (grossEl) grossEl.textContent = '{{ currency_symbol }}' + gross.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            if (countEl) countEl.textContent = count + ' sales';
+            if (barEl) barEl.style.width = Math.min(100, Math.max(pct > 0 ? 3 : 0, pct)) + '%';
+            if (pctEl) pctEl.textContent = pct + '% of chain';
+        });
+    }
+</script>
+{% endblock %}

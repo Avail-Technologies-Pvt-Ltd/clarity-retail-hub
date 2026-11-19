@@ -1,0 +1,142 @@
+{% extends 'partials/base.html' %}
+{% block title %}Edge Sync Monitor — {{ tenant_name }}{% endblock %}
+{% block nav_sync %}active{% endblock %}
+
+{% block content %}
+<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; flex-wrap:wrap; gap:16px;">
+    <div>
+        <h1 class="hub-title">Edge Node Sync Monitor</h1>
+        <p class="hub-subtitle" style="margin-bottom:0;">Live gateway telemetry for Clarity Retail LAN edge terminals syncing into this cloud hub.</p>
+    </div>
+    <button onclick="window.location.reload()" class="btn-hub-ghost">
+        <i class="fa-solid fa-rotate-right"></i> Refresh Telemetry
+    </button>
+</div>
+
+<!-- ── Connected Edge Terminals ──────────────────────────────────────── -->
+<div class="hub-card">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:18px;">
+        <h3 style="font-size:1.05rem; font-weight:700; color:#f1f5f9;">Terminal Nodes & Health Status</h3>
+        <span style="font-size:.8rem; color:#94a3b8;">{{ branches.count }} Registered Store Nodes</span>
+    </div>
+
+    <div class="hub-table-container">
+        <table class="hub-table">
+            <thead>
+                <tr>
+                    <th>Branch Code</th>
+                    <th>Store Name</th>
+                    <th>Connection Status</th>
+                    <th>LAN Software</th>
+                    <th>Last Heartbeat</th>
+                    <th>Last Sync Ingestion</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for b in branches %}
+                <tr>
+                    <td>
+                        <span style="font-family:monospace; font-weight:700; color:#38bdf8; background:#0f172a; border:1px solid #334155; padding:2px 7px; border-radius:4px;">
+                            {{ b.branch_code }}
+                        </span>
+                    </td>
+                    <td style="font-weight:600; color:#f8fafc;">{{ b.name }}</td>
+                    <td>
+                        {% if b.last_ping_at %}
+                        <span class="badge-status active"><i class="fa-solid fa-circle" style="font-size:.5rem;"></i> Online</span>
+                        {% else %}
+                        <span class="badge-status offline"><i class="fa-solid fa-circle" style="font-size:.5rem;"></i> Offline</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span style="font-family:monospace; font-size:.78rem; color:#94a3b8;">
+                            {{ b.edge_version|default:"Retail LAN v1.0" }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if b.last_ping_at %}
+                        <span style="color:#10b981; font-size:.82rem;">{{ b.last_ping_at|timesince }} ago</span>
+                        {% else %}
+                        <span style="color:#64748b; font-size:.78rem;">Never connected</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if b.last_sync_at %}
+                        <span style="color:#38bdf8; font-size:.82rem;">{{ b.last_sync_at|date:"M d, Y H:i:s" }}</span>
+                        {% else %}
+                        <span style="color:#64748b; font-size:.78rem;">Never synced</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" style="text-align:center; padding:32px; color:#94a3b8;">
+                        No store terminals registered yet.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ── Ingestion Activity Feed ──────────────────────────────────────── -->
+<div class="hub-card">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:18px;">
+        <h3 style="font-size:1.05rem; font-weight:700; color:#f1f5f9;">Recent Sync Ingestion Logs</h3>
+        <span style="font-size:.8rem; color:#94a3b8;">Latest 25 payloads</span>
+    </div>
+
+    <div class="hub-table-container">
+        <table class="hub-table">
+            <thead>
+                <tr>
+                    <th>Timestamp</th>
+                    <th>Branch</th>
+                    <th>Direction</th>
+                    <th>Payload Type</th>
+                    <th>Records Count</th>
+                    <th>Status</th>
+                    <th>Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in recent_logs %}
+                <tr>
+                    <td style="font-family:monospace; font-size:.78rem; color:#cbd5e1;">
+                        {{ log.created_at|date:"Y-m-d H:i:s" }}
+                    </td>
+                    <td style="font-weight:600; color:#f8fafc;">
+                        {{ log.branch.name }} [{{ log.branch.branch_code }}]
+                    </td>
+                    <td>
+                        <span style="font-size:.75rem; color:#38bdf8; background:#0f172a; padding:2px 6px; border-radius:4px; border:1px solid #334155;">
+                            {{ log.direction }}
+                        </span>
+                    </td>
+                    <td style="font-weight:500;">{{ log.payload_type }}</td>
+                    <td style="font-family:monospace; font-weight:700; color:#2dd4bf;">{{ log.records_count }}</td>
+                    <td>
+                        {% if log.status == 'SUCCESS' %}
+                        <span class="badge-status active">SUCCESS</span>
+                        {% else %}
+                        <span class="badge-status offline">{{ log.status }}</span>
+                        {% endif %}
+                    </td>
+                    <td style="font-size:.78rem; color:#94a3b8;">
+                        {{ log.error_message|default:"—" }}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" style="text-align:center; padding:40px; color:#94a3b8;">
+                        <i class="fa-solid fa-satellite-dish" style="font-size:2rem; margin-bottom:8px; opacity:.4;"></i>
+                        <p style="margin-top:6px;">No sync events recorded yet. Connect a Clarity Retail LAN terminal to see live telemetry.</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

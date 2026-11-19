@@ -1,0 +1,519 @@
+{% extends 'partials/base.html' %}
+{% block title %}Store Branches — {{ tenant_name }}{% endblock %}
+{% block nav_branches %}active{% endblock %}
+
+{% block content %}
+<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; flex-wrap:wrap; gap:16px;">
+    <div>
+        <h1 class="hub-title">Store Branches & Terminal Access</h1>
+        <p class="hub-subtitle" style="margin-bottom:0;">Configure physical store access points, anti-theft hardware locks, and designate the authoritative Main Branch.</p>
+    </div>
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <a href="{% url 'transfers_buffer' %}" class="btn-hub-ghost">
+            <i class="fa-solid fa-arrows-split-up-and-left"></i> Transfer Buffer Queue
+        </a>
+        <button onclick="openAddBranchModal()" class="btn-hub-primary">
+            <i class="fa-solid fa-plus"></i> Register Store Branch
+        </button>
+    </div>
+</div>
+
+<!-- ── Main Branch Notice & Key Rules ──────────────────────────────── -->
+<div class="hub-card" style="border-left:4px solid #14b8a6; padding:16px 20px; margin-bottom:20px; background:rgba(20,184,166,0.06);">
+    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:14px;">
+        <div style="display:flex; align-items:center; gap:12px;">
+            <div style="width:40px; height:40px; border-radius:10px; background:rgba(20,184,166,0.18); display:flex; align-items:center; justify-content:center; color:#2dd4bf; font-size:1.2rem;">
+                <i class="fa-solid fa-crown"></i>
+            </div>
+            <div>
+                <div style="font-size:.9rem; font-weight:700; color:#f8fafc;">
+                    Current Authoritative Main Branch: 
+                    <span style="color:#2dd4bf;">{{ main_branch.name|default:"None Designated" }}</span>
+                    {% if main_branch %}<code style="font-size:.8rem; background:#0f172a; padding:2px 6px; border-radius:4px; color:#38bdf8;">{{ main_branch.branch_code }}</code>{% endif %}
+                </div>
+                <div style="font-size:.76rem; color:#94a3b8; margin-top:2px;">
+                    This branch is the single source-of-truth. Core product master attributes (names, categories, barcodes) from this branch resolve conflicting global UUIDs.
+                </div>
+            </div>
+        </div>
+        <div>
+            <span style="font-size:.78rem; background:#0f172a; border:1px solid #334155; padding:6px 12px; border-radius:8px; color:#cbd5e1;">
+                <i class="fa-solid fa-shield-halved" style="color:#2dd4bf; margin-right:6px;"></i>Strict 1-Main Branch Enforcement
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- ── Branches Directory Table ────────────────────────────────────── -->
+<div class="hub-card">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:18px;">
+        <h3 style="font-size:1.05rem; font-weight:700; color:#f1f5f9;">Connected Store Network ({{ total_count }})</h3>
+        <span style="font-size:.8rem; color:#94a3b8;">{{ active_count }} active out of {{ total_count }} total</span>
+    </div>
+
+    <div class="hub-table-container">
+        <table class="hub-table">
+            <thead>
+                <tr>
+                    <th>Store Code & Role</th>
+                    <th>Store Name & Address</th>
+                    <th>Manager / Contact</th>
+                    <th>Hardware Pairing</th>
+                    <th>Directory Sync</th>
+                    <th>Status</th>
+                    <th>Sync Credentials</th>
+                    <th>Last Active</th>
+                    <th style="text-align:right;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for b in branches %}
+                <tr>
+                    <td>
+                        <span style="font-family:monospace; font-weight:700; color:#38bdf8; background:#0f172a; border:1px solid #334155; padding:3px 8px; border-radius:5px; font-size:.82rem;">
+                            {{ b.branch_code }}
+                        </span>
+                        <div style="margin-top:6px; display:flex; gap:4px; flex-wrap:wrap;">
+                            {% if b.is_main_branch %}
+                            <span style="font-size:.66rem; background:rgba(20,184,166,0.22); color:#2dd4bf; border:1px solid rgba(20,184,166,0.4); padding:2px 7px; border-radius:4px; font-weight:700; display:inline-flex; align-items:center; gap:4px;">
+                                <i class="fa-solid fa-crown" style="font-size:.6rem;"></i> MAIN BRANCH
+                            </span>
+                            {% endif %}
+                            {% if b.is_headquarters %}
+                            <span style="font-size:.65rem; background:rgba(56,189,248,0.18); color:#38bdf8; padding:2px 6px; border-radius:3px; font-weight:700;">HQ DEPOT</span>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td>
+                        <div style="font-weight:700; color:#f8fafc; font-size:.9rem;">{{ b.name }}</div>
+                        <div style="font-size:.76rem; color:#94a3b8; margin-top:2px;">{{ b.address|default:"No physical address configured" }}</div>
+                        {% if b.bank_name %}
+                        <div style="font-size:.7rem; color:#64748b; margin-top:2px;">
+                            <i class="fa-solid fa-building-columns"></i> {{ b.bank_name }}: {{ b.bank_account_number|default:"-" }}
+                        </div>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div style="color:#e2e8f0; font-weight:500;">{{ b.manager_name|default:"—" }}</div>
+                        <div style="font-size:.75rem; color:#64748b;">{{ b.phone|default:b.email|default:"No phone configured" }}</div>
+                    </td>
+                    <td>
+                        {% if b.pairing_status == 'PAIRED_LOCKED' %}
+                        <span class="badge-status active" title="Locked to hardware fingerprint: {{ b.hardware_fingerprint|truncatechars:16 }}">
+                            <i class="fa-solid fa-lock" style="font-size:.65rem;"></i> Locked
+                        </span>
+                        <div style="font-size:.68rem; color:#64748b; margin-top:3px; font-family:monospace;">
+                            {{ b.hardware_fingerprint|truncatechars:12|default:"Terminal Locked" }}
+                        </div>
+                        {% elif b.pairing_status == 'REVOKED' %}
+                        <span class="badge-status offline" title="Access Revoked">
+                            <i class="fa-solid fa-ban" style="font-size:.65rem;"></i> Revoked
+                        </span>
+                        {% else %}
+                        <span class="badge-status pending" title="Awaiting first ping from LAN to bind hardware">
+                            <i class="fa-solid fa-link-slash" style="font-size:.65rem;"></i> Unpaired
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% with sync_state=b.directory_sync_state %}
+                            {% if sync_state and sync_state.last_synced_version >= max_version %}
+                            <span class="badge-status active" title="Branch holds directory v{{ sync_state.last_synced_version }} (Up to date)">
+                                <i class="fa-solid fa-check-double" style="font-size:.65rem;"></i> Synced (v{{ sync_state.last_synced_version }})
+                            </span>
+                            {% elif sync_state %}
+                            <span class="badge-status pending" style="background:rgba(245,158,11,0.15); color:#f59e0b; border:1px solid rgba(245,158,11,0.3);" title="Branch holds directory v{{ sync_state.last_synced_version }}, latest is v{{ max_version }}">
+                                <i class="fa-solid fa-clock-rotate-left" style="font-size:.65rem;"></i> v{{ sync_state.last_synced_version }} (Behind)
+                            </span>
+                            {% else %}
+                            <span class="badge-status pending" title="Never pulled directory">
+                                <i class="fa-solid fa-hourglass-start" style="font-size:.65rem;"></i> Pending Pull
+                            </span>
+                            {% endif %}
+                        {% endwith %}
+                    </td>
+                    <td>
+                        {% if b.status == 'ACTIVE' %}
+                        <span class="badge-status active"><i class="fa-solid fa-circle" style="font-size:.5rem;"></i> Active</span>
+                        {% else %}
+                        <span class="badge-status offline"><i class="fa-solid fa-circle" style="font-size:.5rem;"></i> Suspended</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div style="display:flex; align-items:center; gap:6px;">
+                            <input type="password" value="{{ b.sync_token }}" readonly id="token-{{ b.id }}" style="background:#0f172a; border:1px solid #334155; color:#38bdf8; font-family:monospace; font-size:.72rem; padding:4px 8px; border-radius:4px; width:110px; outline:none;">
+                            <button onclick="copyToken('token-{{ b.id }}')" class="btn-hub-ghost" style="padding:4px 8px; font-size:.72rem;" title="Copy Sync Token">
+                                <i class="fa-solid fa-copy"></i>
+                            </button>
+                        </div>
+                        {% if b.lan_branch_key %}
+                        <div style="font-size:.68rem; color:#94a3b8; margin-top:3px;">
+                            LAN Key: <code style="color:#2dd4bf;">{{ b.lan_branch_key|truncatechars:12 }}</code>
+                        </div>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if b.last_sync_at %}
+                        <div style="color:#e2e8f0; font-size:.8rem;"><i class="fa-solid fa-arrows-rotate" style="color:#2dd4bf; margin-right:4px;"></i>{{ b.last_sync_at|date:"M d, H:i" }}</div>
+                        {% else %}
+                        <div style="color:#64748b; font-size:.78rem;">Never synced</div>
+                        {% endif %}
+
+                        {% if b.last_ping_at %}
+                        <div style="color:#10b981; font-size:.72rem; margin-top:2px;"><i class="fa-solid fa-signal" style="margin-right:4px;"></i>{{ b.last_ping_at|timesince }} ago</div>
+                        {% endif %}
+                    </td>
+                    <td style="text-align:right;">
+                        <div style="display:inline-flex; align-items:center; gap:6px;">
+                            {% if not b.is_main_branch %}
+                            <button onclick="setMainBranch('{{ b.id }}', '{{ b.name }}')" class="btn-hub-ghost" style="padding:4px 8px; font-size:.74rem; color:#2dd4bf;" title="Designate as Main Branch">
+                                <i class="fa-solid fa-crown"></i> Make Main
+                            </button>
+                            {% endif %}
+                            <button onclick="openEditBranchModal('{{ b.id }}', '{{ b.name|escapejs }}', '{{ b.manager_name|default:''|escapejs }}', '{{ b.phone|default:''|escapejs }}', '{{ b.email|default:''|escapejs }}', '{{ b.address|default:''|escapejs }}', '{{ b.bank_name|default:''|escapejs }}', '{{ b.bank_account_number|default:''|escapejs }}', {{ b.is_headquarters|yesno:'true,false' }})" class="btn-hub-ghost" style="padding:4px 8px; font-size:.74rem; color:#38bdf8;" title="Edit Store">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </button>
+                            <button onclick="toggleBranchStatus('{{ b.id }}', '{{ b.name }}', '{{ b.status }}')" class="btn-hub-ghost" style="padding:4px 8px; font-size:.74rem; color:{% if b.status == 'ACTIVE' %}#f43f5e{% else %}#10b981{% endif %};" title="{% if b.status == 'ACTIVE' %}Suspend Branch{% else %}Reactivate Branch{% endif %}">
+                                <i class="fa-solid {% if b.status == 'ACTIVE' %}fa-ban{% else %}fa-check{% endif %}"></i>
+                            </button>
+                            <button onclick="regenerateToken('{{ b.id }}', '{{ b.name }}')" class="btn-hub-ghost" style="padding:4px 8px; font-size:.74rem; color:#f59e0b;" title="Rotate Token & Reset Lock">
+                                <i class="fa-solid fa-key"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" style="text-align:center; padding:48px; color:#94a3b8;">
+                        <i class="fa-solid fa-shop" style="font-size:2rem; margin-bottom:10px; opacity:.4;"></i>
+                        <p style="font-size:.9rem;">No physical store branches configured yet.</p>
+                        <button onclick="openAddBranchModal()" class="btn-hub-primary" style="margin-top:14px;">
+                            Register First Store Branch
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    function copyToken(elementId) {
+        const input = document.getElementById(elementId);
+        input.type = 'text';
+        input.select();
+        document.execCommand('copy');
+        input.type = 'password';
+        Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'success',
+            title: 'Sync token copied to clipboard!',
+            showConfirmButton: false,
+            timer: 2000,
+            background: '#1e293b',
+            color: '#f8fafc'
+        });
+    }
+
+    async function setMainBranch(branchId, branchName) {
+        const confirm = await Swal.fire({
+            title: 'Designate Main Branch?',
+            html: `Make <b>"${branchName}"</b> the primary source-of-truth?<br><br><span style="color:#94a3b8; font-size:.82rem;">Conflicting product master data (names, barcodes, categories) across all stores will automatically resolve to this branch.</span>`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#0d9488',
+            confirmButtonText: 'Yes, Set as Main',
+            background: '#1e293b',
+            color: '#f8fafc'
+        });
+
+        if (confirm.isConfirmed) {
+            try {
+                const res = await fetch(`/branches/${branchId}/set-main/`, {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': '{{ csrf_token }}' }
+                });
+                const data = await res.json();
+                if (data.type === 'success') {
+                    await Swal.fire({ title: 'Main Branch Updated!', text: data.message, icon: 'success', background: '#1e293b', color: '#f8fafc' });
+                    window.location.reload();
+                } else {
+                    Swal.fire({ title: 'Warning', text: data.message, icon: 'warning', background: '#1e293b', color: '#f8fafc' });
+                }
+            } catch (err) {
+                Swal.fire({ title: 'Error', text: err.message, icon: 'error', background: '#1e293b', color: '#f8fafc' });
+            }
+        }
+    }
+
+    async function toggleBranchStatus(branchId, branchName, currentStatus) {
+        const actionText = currentStatus === 'ACTIVE' ? 'Suspend' : 'Reactivate';
+        const confirm = await Swal.fire({
+            title: `${actionText} Store Branch?`,
+            text: `Are you sure you want to ${actionText.toLowerCase()} "${branchName}"?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: currentStatus === 'ACTIVE' ? '#f43f5e' : '#10b981',
+            confirmButtonText: `Yes, ${actionText}`,
+            background: '#1e293b',
+            color: '#f8fafc'
+        });
+
+        if (confirm.isConfirmed) {
+            try {
+                const res = await fetch(`/branches/${branchId}/toggle-status/`, {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': '{{ csrf_token }}' }
+                });
+                const data = await res.json();
+                if (data.type === 'success') {
+                    await Swal.fire({ title: 'Status Updated', text: data.message, icon: 'success', background: '#1e293b', color: '#f8fafc' });
+                    window.location.reload();
+                } else {
+                    Swal.fire({ title: 'Error', text: data.message, icon: 'error', background: '#1e293b', color: '#f8fafc' });
+                }
+            } catch (err) {
+                Swal.fire({ title: 'Error', text: err.message, icon: 'error', background: '#1e293b', color: '#f8fafc' });
+            }
+        }
+    }
+
+    async function regenerateToken(branchId, branchName) {
+        const confirm = await Swal.fire({
+            title: 'Rotate Sync Token?',
+            text: `Regenerating token for "${branchName}" will immediately invalidate the existing token on the Clarity Retail LAN edge node and reset hardware pairing locks.`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#f59e0b',
+            confirmButtonText: 'Rotate Token & Reset Lock',
+            background: '#1e293b',
+            color: '#f8fafc'
+        });
+
+        if (confirm.isConfirmed) {
+            try {
+                const res = await fetch(`/branches/${branchId}/regenerate-token/`, {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': '{{ csrf_token }}' }
+                });
+                const data = await res.json();
+                if (data.type === 'success') {
+                    await Swal.fire({
+                        title: 'Token Rotated!',
+                        html: `${data.message}<br><br>New Token:<br><code style="background:#0f172a; color:#2dd4bf; padding:6px 12px; border-radius:6px; display:inline-block; font-size:.85rem;">${data.sync_token}</code>`,
+                        icon: 'success',
+                        background: '#1e293b',
+                        color: '#f8fafc'
+                    });
+                    window.location.reload();
+                } else {
+                    Swal.fire({ title: 'Error', text: data.message, icon: 'error', background: '#1e293b', color: '#f8fafc' });
+                }
+            } catch (err) {
+                Swal.fire({ title: 'Error', text: err.message, icon: 'error', background: '#1e293b', color: '#f8fafc' });
+            }
+        }
+    }
+
+    async function openAddBranchModal() {
+        const { value: formValues } = await Swal.fire({
+            title: 'Register Store Branch',
+            background: '#1e293b',
+            color: '#f8fafc',
+            confirmButtonColor: '#0d9488',
+            confirmButtonText: 'Register Store',
+            showCancelButton: true,
+            cancelButtonColor: '#475569',
+            html: `
+                <div style="text-align:left; font-size:.85rem; display:flex; flex-direction:column; gap:10px; margin-top:8px;">
+                    <div>
+                        <label style="color:#94a3b8; display:block; margin-bottom:4px; font-weight:600;">Branch Store Name *</label>
+                        <input id="swal-branch-name" class="swal2-input" placeholder="e.g. First Street Branch" style="margin:0; width:100%; background:#0f172a; border:1px solid #334155; color:#fff; border-radius:8px; padding:8px 12px; font-size:.86rem;">
+                    </div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                        <div>
+                            <label style="color:#94a3b8; display:block; margin-bottom:4px; font-weight:600;">Branch Code *</label>
+                            <input id="swal-branch-code" class="swal2-input" placeholder="e.g. HRE-CBD-01" style="margin:0; width:100%; background:#0f172a; border:1px solid #334155; color:#fff; border-radius:8px; padding:8px 12px; font-size:.86rem; text-transform:uppercase;">
+                        </div>
+                        <div>
+                            <label style="color:#94a3b8; display:block; margin-bottom:4px; font-weight:600;">LAN Branch Key</label>
+                            <input id="swal-branch-lan-key" class="swal2-input" placeholder="Auto-key from LAN" style="margin:0; width:100%; background:#0f172a; border:1px solid #334155; color:#fff; border-radius:8px; padding:8px 12px; font-size:.86rem;">
+                        </div>
+                    </div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                        <div>
+                            <label style="color:#94a3b8; display:block; margin-bottom:4px; font-weight:600;">Manager Full Name</label>
+                            <input id="swal-branch-manager" class="swal2-input" placeholder="e.g. Jane Doe" style="margin:0; width:100%; background:#0f172a; border:1px solid #334155; color:#fff; border-radius:8px; padding:8px 12px; font-size:.86rem;">
+                        </div>
+                        <div>
+                            <label style="color:#94a3b8; display:block; margin-bottom:4px; font-weight:600;">Contact Phone</label>
+                            <input id="swal-branch-phone" class="swal2-input" placeholder="+263 77 123 4567" style="margin:0; width:100%; background:#0f172a; border:1px solid #334155; color:#fff; border-radius:8px; padding:8px 12px; font-size:.86rem;">
+                        </div>
+                    </div>
+                    <div>
+                        <label style="color:#94a3b8; display:block; margin-bottom:4px; font-weight:600;">Physical Address</label>
+                        <input id="swal-branch-address" class="swal2-input" placeholder="e.g. 100 First St, Harare" style="margin:0; width:100%; background:#0f172a; border:1px solid #334155; color:#fff; border-radius:8px; padding:8px 12px; font-size:.86rem;">
+                    </div>
+                    <div style="display:flex; gap:16px; margin-top:4px;">
+                        <label style="display:flex; align-items:center; gap:6px; color:#cbd5e1; cursor:pointer;">
+                            <input type="checkbox" id="swal-branch-is-main" style="accent-color:#0d9488;">
+                            <span>Set as Authoritative Main Branch</span>
+                        </label>
+                        <label style="display:flex; align-items:center; gap:6px; color:#cbd5e1; cursor:pointer;">
+                            <input type="checkbox" id="swal-branch-is-hq" style="accent-color:#0d9488;">
+                            <span>Headquarters Depot</span>
+                        </label>
+                    </div>
+                </div>
+            `,
+            focusConfirm: false,
+            preConfirm: () => {
+                const name = document.getElementById('swal-branch-name').value.trim();
+                const code = document.getElementById('swal-branch-code').value.trim();
+                const lanKey = document.getElementById('swal-branch-lan-key').value.trim();
+                const manager = document.getElementById('swal-branch-manager').value.trim();
+                const phone = document.getElementById('swal-branch-phone').value.trim();
+                const address = document.getElementById('swal-branch-address').value.trim();
+                const isMain = document.getElementById('swal-branch-is-main').checked;
+                const isHq = document.getElementById('swal-branch-is-hq').checked;
+                if (!name || !code) {
+                    Swal.showValidationMessage('Store Name and Branch Code are strictly mandatory.');
+                    return false;
+                }
+                return { name, branch_code: code, lan_branch_key: lanKey, manager_name: manager, phone, address, is_main: isMain, is_hq: isHq };
+            }
+        });
+
+        if (formValues) {
+            const formData = new FormData();
+            formData.append('name', formValues.name);
+            formData.append('branch_code', formValues.branch_code);
+            formData.append('lan_branch_key', formValues.lan_branch_key);
+            formData.append('manager_name', formValues.manager_name);
+            formData.append('phone', formValues.phone);
+            formData.append('address', formValues.address);
+            if (formValues.is_main) formData.append('is_main_branch', '1');
+            if (formValues.is_hq) formData.append('is_headquarters', '1');
+
+            try {
+                const res = await fetch('/branches/create/', {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+                    body: formData
+                });
+                const data = await res.json();
+                if (data.type === 'success') {
+                    await Swal.fire({
+                        title: 'Branch Registered!',
+                        html: `Store <b>${formValues.name}</b> registered.<br><br>Edge Sync Token:<br><code style="background:#0f172a; color:#2dd4bf; padding:6px 12px; border-radius:6px; display:inline-block; margin-top:8px; font-size:.85rem;">${data.sync_token}</code>`,
+                        icon: 'success',
+                        background: '#1e293b',
+                        color: '#f8fafc',
+                        confirmButtonColor: '#0d9488'
+                    });
+                    window.location.reload();
+                } else {
+                    Swal.fire({ title: 'Error', text: data.message, icon: 'warning', background: '#1e293b', color: '#f8fafc' });
+                }
+            } catch (err) {
+                Swal.fire({ title: 'Error', text: err.message, icon: 'error', background: '#1e293b', color: '#f8fafc' });
+            }
+        }
+    }
+
+    async function openEditBranchModal(id, name, manager, phone, email, address, bankName, bankAcc, isHq) {
+        const { value: formValues } = await Swal.fire({
+            title: `Edit ${name}`,
+            background: '#1e293b',
+            color: '#f8fafc',
+            confirmButtonColor: '#0d9488',
+            confirmButtonText: 'Save Changes',
+            showCancelButton: true,
+            cancelButtonColor: '#475569',
+            html: `
+                <div style="text-align:left; font-size:.85rem; display:flex; flex-direction:column; gap:10px; margin-top:8px;">
+                    <div>
+                        <label style="color:#94a3b8; display:block; margin-bottom:4px; font-weight:600;">Store Name *</label>
+                        <input id="swal-edit-name" class="swal2-input" value="${name}" style="margin:0; width:100%; background:#0f172a; border:1px solid #334155; color:#fff; border-radius:8px; padding:8px 12px; font-size:.86rem;">
+                    </div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                        <div>
+                            <label style="color:#94a3b8; display:block; margin-bottom:4px; font-weight:600;">Manager Name</label>
+                            <input id="swal-edit-manager" class="swal2-input" value="${manager}" style="margin:0; width:100%; background:#0f172a; border:1px solid #334155; color:#fff; border-radius:8px; padding:8px 12px; font-size:.86rem;">
+                        </div>
+                        <div>
+                            <label style="color:#94a3b8; display:block; margin-bottom:4px; font-weight:600;">Phone</label>
+                            <input id="swal-edit-phone" class="swal2-input" value="${phone}" style="margin:0; width:100%; background:#0f172a; border:1px solid #334155; color:#fff; border-radius:8px; padding:8px 12px; font-size:.86rem;">
+                        </div>
+                    </div>
+                    <div>
+                        <label style="color:#94a3b8; display:block; margin-bottom:4px; font-weight:600;">Address</label>
+                        <input id="swal-edit-address" class="swal2-input" value="${address}" style="margin:0; width:100%; background:#0f172a; border:1px solid #334155; color:#fff; border-radius:8px; padding:8px 12px; font-size:.86rem;">
+                    </div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                        <div>
+                            <label style="color:#94a3b8; display:block; margin-bottom:4px; font-weight:600;">Bank Name</label>
+                            <input id="swal-edit-bank" class="swal2-input" value="${bankName}" placeholder="e.g. Stanbic Bank" style="margin:0; width:100%; background:#0f172a; border:1px solid #334155; color:#fff; border-radius:8px; padding:8px 12px; font-size:.86rem;">
+                        </div>
+                        <div>
+                            <label style="color:#94a3b8; display:block; margin-bottom:4px; font-weight:600;">Account Number</label>
+                            <input id="swal-edit-acc" class="swal2-input" value="${bankAcc}" placeholder="Account #" style="margin:0; width:100%; background:#0f172a; border:1px solid #334155; color:#fff; border-radius:8px; padding:8px 12px; font-size:.86rem;">
+                        </div>
+                    </div>
+                    <div style="margin-top:4px;">
+                        <label style="display:flex; align-items:center; gap:6px; color:#cbd5e1; cursor:pointer;">
+                            <input type="checkbox" id="swal-edit-hq" ${isHq ? 'checked' : ''} style="accent-color:#0d9488;">
+                            <span>Headquarters Depot Designation</span>
+                        </label>
+                    </div>
+                </div>
+            `,
+            focusConfirm: false,
+            preConfirm: () => {
+                const nameVal = document.getElementById('swal-edit-name').value.trim();
+                const managerVal = document.getElementById('swal-edit-manager').value.trim();
+                const phoneVal = document.getElementById('swal-edit-phone').value.trim();
+                const addressVal = document.getElementById('swal-edit-address').value.trim();
+                const bankVal = document.getElementById('swal-edit-bank').value.trim();
+                const accVal = document.getElementById('swal-edit-acc').value.trim();
+                const hqVal = document.getElementById('swal-edit-hq').checked;
+                if (!nameVal) {
+                    Swal.showValidationMessage('Store name cannot be empty.');
+                    return false;
+                }
+                return { name: nameVal, manager_name: managerVal, phone: phoneVal, address: addressVal, bank_name: bankVal, bank_account_number: accVal, is_headquarters: hqVal };
+            }
+        });
+
+        if (formValues) {
+            const formData = new FormData();
+            formData.append('name', formValues.name);
+            formData.append('manager_name', formValues.manager_name);
+            formData.append('phone', formValues.phone);
+            formData.append('address', formValues.address);
+            formData.append('bank_name', formValues.bank_name);
+            formData.append('bank_account_number', formValues.bank_account_number);
+            if (formValues.is_headquarters) formData.append('is_headquarters', '1');
+
+            try {
+                const res = await fetch(`/branches/${id}/update/`, {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+                    body: formData
+                });
+                const data = await res.json();
+                if (data.type === 'success') {
+                    await Swal.fire({ title: 'Saved!', text: data.message, icon: 'success', background: '#1e293b', color: '#f8fafc' });
+                    window.location.reload();
+                } else {
+                    Swal.fire({ title: 'Error', text: data.message, icon: 'error', background: '#1e293b', color: '#f8fafc' });
+                }
+            } catch (err) {
+                Swal.fire({ title: 'Error', text: err.message, icon: 'error', background: '#1e293b', color: '#f8fafc' });
+            }
+        }
+    }
+</script>
+{% endblock %}

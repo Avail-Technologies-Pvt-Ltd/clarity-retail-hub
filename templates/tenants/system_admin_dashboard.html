@@ -1,0 +1,1581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>System Administration &bull; Clarity Retail Hub</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        (function() {
+            try {
+                if (localStorage.getItem('crh_admin_sidebar_collapsed') === 'true' && window.innerWidth > 900) {
+                    document.documentElement.classList.add('sidebar-collapsed-mode');
+                }
+            } catch(e) {}
+        })();
+    </script>
+    <style>
+        :root {
+            --bg-base: #0b1120;
+            --bg-surface: #0f172a;
+            --bg-card: #1e293b;
+            --bg-card-hover: #24344d;
+            --border-color: #334155;
+            --teal-500: #14b8a6;
+            --teal-600: #0d9488;
+            --teal-bg: rgba(20, 184, 166, 0.12);
+            --indigo-500: #6366f1;
+            --indigo-600: #4f46e5;
+            --indigo-bg: rgba(99, 102, 241, 0.15);
+            --emerald-500: #10b981;
+            --rose-500: #f43f5e;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --text-dim: #64748b;
+            --topbar-h: 60px;
+            --sidebar-w: 240px;
+            --sidebar-w-collapsed: 68px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            scrollbar-width: thin;
+            scrollbar-color: #334155 transparent;
+        }
+
+        ::-webkit-scrollbar, *::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track, *::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb, *::-webkit-scrollbar-thumb {
+            background-color: #334155;
+            border-radius: 99px;
+        }
+        ::-webkit-scrollbar-thumb:hover, *::-webkit-scrollbar-thumb:hover {
+            background-color: #475569;
+        }
+
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            min-height: 100vh;
+            overflow-x: hidden;
+            margin: 0;
+        }
+
+        /* ── Top Navigation Bar (Fixed Application Bar) ─────────── */
+        #topbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            width: 100%;
+            height: var(--topbar-h);
+            background-color: var(--bg-surface);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            z-index: 1000;
+            box-sizing: border-box;
+        }
+
+        .brand-wrap {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .brand-badge {
+            background: linear-gradient(135deg, #4f46e5, #6366f1);
+            color: #ffffff;
+            font-weight: 800;
+            font-size: .82rem;
+            letter-spacing: .08em;
+            padding: 3px 8px;
+            border-radius: 6px;
+        }
+
+        .brand-title {
+            font-weight: 700;
+            font-size: 1.05rem;
+            letter-spacing: -0.01em;
+            color: #f1f5f9;
+        }
+
+        .brand-sub {
+            font-size: .72rem;
+            color: #a5b4fc;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            margin-left: 4px;
+        }
+
+        /* ── Left Sidebar (Desktop Fixed & Collapsible) ──────────── */
+        #sidebar {
+            position: fixed;
+            top: var(--topbar-h);
+            left: 0;
+            bottom: 0;
+            height: calc(100vh - var(--topbar-h));
+            width: var(--sidebar-w);
+            background-color: var(--bg-surface);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            padding: 14px 8px;
+            gap: 4px;
+            z-index: 900;
+            overflow-y: auto;
+            overflow-x: hidden;
+            user-select: none;
+            box-sizing: border-box;
+            transition: width 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        #sidebar-collapse-btn {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            border-radius: 6px;
+            padding: 6px 9px;
+            font-size: .85rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all .15s ease;
+        }
+        #sidebar-collapse-btn:hover {
+            color: var(--text-main);
+            background: var(--bg-card);
+            border-color: #6366f1;
+        }
+
+        .sidebar-collapsed-mode #sidebar,
+        #sidebar.collapsed {
+            width: var(--sidebar-w-collapsed) !important;
+            padding: 14px 6px !important;
+        }
+
+        .sidebar-collapsed-mode #sidebar .nav-section-title,
+        #sidebar.collapsed .nav-section-title {
+            opacity: 0;
+            height: 4px;
+            padding: 0;
+            margin: 6px 0;
+            overflow: hidden;
+            border-top: 1px solid rgba(51, 65, 85, 0.5);
+        }
+
+        .sidebar-collapsed-mode #sidebar .nav-item,
+        #sidebar.collapsed .nav-item {
+            justify-content: center !important;
+            padding: 10px 0 !important;
+            gap: 0 !important;
+            position: relative;
+        }
+
+        .sidebar-collapsed-mode #sidebar .nav-item span,
+        #sidebar.collapsed .nav-item span {
+            display: none !important;
+        }
+
+        .sidebar-collapsed-mode #sidebar .nav-item i,
+        #sidebar.collapsed .nav-item i {
+            width: auto !important;
+            font-size: 1.15rem !important;
+            margin: 0 !important;
+        }
+
+        /* Tooltip on hover in collapsed mode */
+        .sidebar-collapsed-mode #sidebar .nav-item:hover::after,
+        #sidebar.collapsed .nav-item:hover::after {
+            content: attr(data-title);
+            position: absolute;
+            left: calc(100% + 12px);
+            top: 50%;
+            transform: translateY(-50%);
+            background: #1e293b;
+            color: #f1f5f9;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            white-space: nowrap;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.6), 0 4px 6px -4px rgba(0, 0, 0, 0.4);
+            border: 1px solid #334155;
+            z-index: 3000;
+            pointer-events: none;
+        }
+
+        .nav-section-title {
+            font-size: .68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            color: var(--text-dim);
+            padding: 10px 10px 4px;
+            margin-top: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: .85rem;
+            font-weight: 500;
+            transition: all .15s ease;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .nav-item i {
+            width: 18px;
+            text-align: center;
+            font-size: .95rem;
+            color: var(--text-dim);
+        }
+        .nav-item:hover {
+            color: var(--text-main);
+            background-color: rgba(255, 255, 255, 0.04);
+        }
+        .nav-item:hover i {
+            color: #a5b4fc;
+        }
+        .nav-item.active {
+            color: #ffffff;
+            background: linear-gradient(90deg, rgba(99, 102, 241, 0.22) 0%, rgba(99, 102, 241, 0.08) 100%);
+            border-left: 3px solid #6366f1;
+            font-weight: 600;
+        }
+        .nav-item.active i {
+            color: #818cf8;
+        }
+
+        /* ── Main Content Area ───────────────────────────────────── */
+        #main-content {
+            margin-left: var(--sidebar-w);
+            padding: calc(var(--topbar-h) + 24px) 28px 48px;
+            min-height: 100vh;
+            background-color: var(--bg-base);
+            box-sizing: border-box;
+            transition: margin-left 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+            width: calc(100% - var(--sidebar-w));
+        }
+
+        .sidebar-collapsed-mode #main-content,
+        html.sidebar-collapsed-mode #main-content {
+            margin-left: var(--sidebar-w-collapsed) !important;
+            width: calc(100% - var(--sidebar-w-collapsed)) !important;
+        }
+
+        /* Metrics Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 18px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .stat-val {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: #f1f5f9;
+            margin: 4px 0 2px;
+        }
+        .stat-lbl {
+            font-size: .75rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: .04em;
+        }
+        .stat-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+
+        /* App Card & Table Container */
+        .hub-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 22px;
+            margin-bottom: 24px;
+        }
+        .hub-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .hub-table-container {
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            overflow-x: auto;
+            background: #0f172a;
+        }
+        .hub-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: .84rem;
+            text-align: left;
+        }
+        .hub-table th {
+            background: #0b1120;
+            color: #94a3b8;
+            font-size: .74rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            padding: 12px 14px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .hub-table td {
+            padding: 12px 14px;
+            border-bottom: 1px solid rgba(51, 65, 85, 0.4);
+            color: #cbd5e1;
+        }
+        .hub-table tr:last-child td {
+            border-bottom: none;
+        }
+        .hub-table tr:hover td {
+            background-color: rgba(255, 255, 255, 0.02);
+        }
+
+        /* App Buttons */
+        .btn-app-primary {
+            background-color: var(--indigo-600);
+            color: #ffffff;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-size: .84rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            transition: all .15s ease;
+        }
+        .btn-app-primary:hover {
+            background-color: var(--indigo-500);
+        }
+
+        .btn-app-ghost {
+            background: transparent;
+            color: var(--text-muted);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 7px 14px;
+            font-size: .82rem;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all .15s ease;
+        }
+        .btn-app-ghost:hover {
+            background: #1e293b;
+            color: var(--text-main);
+            border-color: #475569;
+        }
+
+        .schema-badge {
+            background: #0b1120;
+            border: 1px solid #334155;
+            color: #a5b4fc;
+            padding: 2px 7px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: .78rem;
+            font-weight: 600;
+        }
+
+        #sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(2px);
+            z-index: 1500;
+        }
+        #mobile-menu-btn {
+            display: none;
+            background: transparent;
+            border: none;
+            color: #f1f5f9;
+            font-size: 1.25rem;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 6px;
+        }
+        #sidebar-mobile-header {
+            display: none;
+        }
+
+        @media (max-width: 900px) {
+            #mobile-menu-btn {
+                display: block;
+            }
+            #sidebar-collapse-btn {
+                display: none !important;
+            }
+            #sidebar {
+                position: fixed;
+                top: 0 !important;
+                bottom: 0;
+                left: -290px;
+                width: 275px !important;
+                height: 100vh !important;
+                z-index: 2000;
+                transition: left .25s ease-in-out;
+                box-shadow: 6px 0 30px rgba(0, 0, 0, 0.75);
+                padding: 12px 10px !important;
+            }
+            #sidebar.open {
+                left: 0;
+            }
+            #sidebar-overlay.active {
+                display: block;
+                z-index: 1900;
+            }
+            #sidebar-mobile-header {
+                display: flex !important;
+                align-items: center;
+                justify-content: space-between;
+                padding: 6px 8px 14px;
+                margin-bottom: 10px;
+                border-bottom: 1px solid var(--border-color);
+            }
+            #main-content {
+                margin-left: 0 !important;
+                padding: calc(var(--topbar-h) + 16px) 14px 32px;
+            }
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr) !important;
+                gap: 12px !important;
+            }
+        }
+
+        @media (max-width: 640px) {
+            #topbar {
+                padding: 0 10px;
+            }
+            .brand-sub {
+                display: none;
+            }
+            .brand-badge {
+                font-size: .68rem;
+                padding: 3px 6px;
+            }
+            .btn-app-ghost span {
+                display: none;
+            }
+            .btn-app-ghost {
+                padding: 6px 10px !important;
+            }
+            .stats-grid {
+                grid-template-columns: 1fr !important;
+            }
+            .hub-card {
+                padding: 16px 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ── Top Application Bar ──────────────────────────────────────── -->
+    <header id="topbar">
+        <div style="display:flex; align-items:center; gap:10px;">
+            <button type="button" id="mobile-menu-btn" onclick="toggleMobileSidebar()" title="Toggle Navigation">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+            <button type="button" id="sidebar-collapse-btn" onclick="toggleSidebarCollapse()" title="Toggle Sidebar">
+                <i class="fa-solid fa-bars-staggered" id="sidebar-collapse-icon"></i>
+            </button>
+            <a href="{% url 'workspaces_list' %}" class="brand-wrap">
+                <span class="brand-badge"><i class="fa-solid fa-shield-halved"></i> SYSTEM ADMIN</span>
+                <div>
+                    <span class="brand-title">Clarity Retail</span>
+                    <span class="brand-sub">Control Plane</span>
+                </div>
+            </a>
+        </div>
+
+        <div style="display:flex; align-items:center; gap:10px;">
+            <!-- Quick representation switch -->
+            <a href="{% url 'workspaces_list' %}" class="btn-app-ghost" title="Switch to Business Workspace">
+                <i class="fa-solid fa-repeat" style="color:#2dd4bf;"></i>
+                <span>Switch Dashboard</span>
+            </a>
+
+            <!-- Django Admin shortcut -->
+            <a href="/admin/" target="_blank" class="btn-app-ghost" style="border-color:rgba(16,185,129,0.3); background:rgba(16,185,129,0.1); color:#6ee7b7;" title="Open Django Core Admin">
+                <i class="fa-solid fa-sliders"></i>
+                <span>Django Admin</span>
+            </a>
+
+            <!-- User Menu / Sign Out -->
+            <a href="{% url 'user_logout' %}" class="btn-app-ghost" style="color:#f43f5e;" title="Sign out of system">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <span>Sign Out</span>
+            </a>
+        </div>
+    </header>
+
+    <!-- Mobile Drawer Overlay -->
+    <div id="sidebar-overlay" onclick="toggleMobileSidebar()"></div>
+
+    <!-- ── Left Application Sidebar ─────────────────────────────────── -->
+    <aside id="sidebar">
+        <!-- Mobile Drawer Close Header -->
+        <div id="sidebar-mobile-header">
+            <div style="display:flex; align-items:center; gap:8px;">
+                <span class="brand-badge"><i class="fa-solid fa-shield-halved"></i> ADMIN</span>
+                <span style="font-weight:700; font-size:.88rem; color:#f1f5f9;">Control Plane</span>
+            </div>
+            <button type="button" onclick="toggleMobileSidebar()" style="background:#0f172a; border:1px solid #334155; color:#cbd5e1; font-size:.9rem; cursor:pointer; width:30px; height:30px; border-radius:6px; display:inline-flex; align-items:center; justify-content:center;" title="Close Menu">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <div class="nav-section-title">Core Control</div>
+        <a href="{% url 'system_admin_dashboard' %}" class="nav-item active" data-title="Overview & Tenants">
+            <i class="fa-solid fa-gauge-high"></i> <span>Overview & Tenants</span>
+        </a>
+        <a href="#tenants-section" class="nav-item" data-title="Enterprise Schemas">
+            <i class="fa-solid fa-building"></i> <span>Enterprise Schemas</span>
+        </a>
+        <a href="#ecosystem-section" class="nav-item" data-title="Community Ecosystem">
+            <i class="fa-solid fa-network-wired"></i> <span>Community Ecosystem</span>
+        </a>
+
+        <div class="nav-section-title">Platform Management</div>
+        <a href="javascript:void(0)" onclick="openProvisionModal()" class="nav-item" data-title="Provision Tenant">
+            <i class="fa-solid fa-plus-circle"></i> <span>Provision Tenant</span>
+        </a>
+        <a href="javascript:void(0)" onclick="openAddPlatformModal()" class="nav-item" data-title="Connect Server">
+            <i class="fa-solid fa-server"></i> <span>Connect Server</span>
+        </a>
+        <a href="#ecosystem-section" class="nav-item" data-title="Server Directory">
+            <i class="fa-solid fa-network-wired"></i> <span>Server Directory</span>
+        </a>
+
+        <div class="nav-section-title" style="margin-top:auto;">Session</div>
+        <a href="{% url 'workspaces_list' %}" class="nav-item" data-title="Return to Workspaces">
+            <i class="fa-solid fa-arrow-left"></i> <span>Return to Workspaces</span>
+        </a>
+    </aside>
+
+    <!-- ── Main Application Body ────────────────────────────────────── -->
+    <main id="main-content">
+        <!-- Title bar -->
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:24px; flex-wrap:wrap; gap:16px;">
+            <div>
+                <h1 style="font-size:1.6rem; font-weight:800; color:#f8fafc; letter-spacing:-0.02em;">System Administration</h1>
+                <p style="color:#94a3b8; font-size:.85rem; margin-top:3px;">Master application control plane for PostgreSQL schema-per-tenant lifecycle &amp; global user roles.</p>
+            </div>
+            <div style="display:flex; gap:10px;">
+                <button onclick="openProvisionModal()" class="btn-app-primary">
+                    <i class="fa-solid fa-plus"></i> Provision New Tenant
+                </button>
+            </div>
+        </div>
+
+        <!-- Metric Stat Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div>
+                    <div class="stat-lbl">Provisioned Tenants</div>
+                    <div class="stat-val" style="color:#38bdf8;">{{ total_tenants_count }}</div>
+                    <div style="font-size:.72rem; color:#94a3b8;">Multi-tenant companies</div>
+                </div>
+                <div class="stat-icon" style="background:rgba(56,189,248,0.12); color:#38bdf8;">
+                    <i class="fa-solid fa-building"></i>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div>
+                    <div class="stat-lbl">Active Schemas</div>
+                    <div class="stat-val" style="color:#34d399;">{{ active_schemas_count }}</div>
+                    <div style="font-size:.72rem; color:#34d399;"><i class="fa-solid fa-circle-check"></i> Online in PostgreSQL</div>
+                </div>
+                <div class="stat-icon" style="background:rgba(52,211,153,0.12); color:#34d399;">
+                    <i class="fa-solid fa-database"></i>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div>
+                    <div class="stat-lbl">Global Accounts</div>
+                    <div class="stat-val" style="color:#c084fc;">{{ total_users_count }}</div>
+                    <div style="font-size:.72rem; color:#94a3b8;">Shared authentication users</div>
+                </div>
+                <div class="stat-icon" style="background:rgba(192,132,252,0.12); color:#c084fc;">
+                    <i class="fa-solid fa-users"></i>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div>
+                    <div class="stat-lbl">Architecture Mode</div>
+                    <div class="stat-val" style="font-size:1.15rem; font-family:'JetBrains Mono',monospace; color:#fbbf24;">Schema-Per-Tenant</div>
+                    <div style="font-size:.72rem; color:#94a3b8;">Isolated databases</div>
+                </div>
+                <div class="stat-icon" style="background:rgba(251,191,36,0.12); color:#fbbf24;">
+                    <i class="fa-solid fa-server"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Managed Tenants Table -->
+        <div class="hub-card" id="tenants-section">
+            <div class="hub-card-header">
+                <div>
+                    <h3 style="font-size:1.1rem; font-weight:700; color:#f1f5f9;">Managed Tenant Enterprises</h3>
+                    <p style="color:#94a3b8; font-size:.8rem; margin-top:2px;">All isolated tenant environments running on PostgreSQL schemas.</p>
+                </div>
+                <div>
+                    <button onclick="openProvisionModal()" class="btn-app-ghost" style="border-color:#4f46e5; color:#a5b4fc;">
+                        <i class="fa-solid fa-plus"></i> New Tenant
+                    </button>
+                </div>
+            </div>
+
+            <div class="hub-table-container">
+                <table class="hub-table">
+                    <thead>
+                        <tr>
+                            <th>Company Name</th>
+                            <th>Postgres Schema</th>
+                            <th>Domain</th>
+                            <th>Currency</th>
+                            <th>Status</th>
+                            <th>Provisioned</th>
+                            <th style="text-align:right;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for t in all_tenants_admin %}
+                        <tr>
+                            <td style="font-weight:600; color:#f8fafc;">{{ t.company.name }}</td>
+                            <td><span class="schema-badge">{{ t.company.schema_name }}</span></td>
+                            <td style="color:#94a3b8; font-family:'JetBrains Mono',monospace; font-size:.8rem;">{{ t.domain }}</td>
+                            <td><span style="font-weight:700; color:#cbd5e1;">{{ t.company.currency_code }}</span></td>
+                            <td>
+                                {% if t.company.is_active %}
+                                <span style="background:rgba(52,211,153,0.15); color:#34d399; padding:2px 8px; border-radius:12px; font-size:.72rem; font-weight:700;">ACTIVE</span>
+                                {% else %}
+                                <span style="background:rgba(248,113,113,0.15); color:#f87171; padding:2px 8px; border-radius:12px; font-size:.72rem; font-weight:700;">PAUSED</span>
+                                {% endif %}
+                            </td>
+                            <td style="color:#64748b; font-size:.78rem;">{{ t.company.created_on|date:"M d, Y" }}</td>
+                            <td style="text-align:right; white-space:nowrap;">
+                                <a href="{{ request.scheme }}://{{ t.domain }}{{ port_str }}/" target="_blank" class="btn-app-ghost" style="padding:4px 9px; font-size:.76rem;" title="Launch Tenant Dashboard">
+                                    <i class="fa-solid fa-arrow-up-right-from-square" style="color:var(--teal-400);"></i> Launch
+                                </a>
+                                <button onclick="openUsersModal({{ t.company.id }}, '{{ t.company.name|escapejs }}')" class="btn-app-ghost" style="padding:4px 9px; font-size:.76rem; color:#818cf8; margin-left:4px;" title="Manage Privileged Users">
+                                    <i class="fa-solid fa-users"></i> Users ({{ t.members_count }})
+                                </button>
+                                <button onclick="openEditTenantModal({{ t.company.id }})" class="btn-app-ghost" style="padding:4px 9px; font-size:.76rem; color:#38bdf8; margin-left:4px;" title="Update Tenant Details">
+                                    <i class="fa-solid fa-pen-to-square"></i> Edit
+                                </button>
+                                <button onclick="toggleTenantStatus({{ t.company.id }}, '{{ t.company.name|escapejs }}', {{ t.company.is_active|yesno:'true,false' }})" class="btn-app-ghost" style="padding:4px 9px; font-size:.76rem; color:{% if t.company.is_active %}#fbbf24{% else %}#34d399{% endif %}; margin-left:4px;" title="{% if t.company.is_active %}Pause Tenant{% else %}Resume Tenant{% endif %}">
+                                    {% if t.company.is_active %}<i class="fa-solid fa-pause"></i> Pause{% else %}<i class="fa-solid fa-play"></i> Resume{% endif %}
+                                </button>
+                                <button onclick="deleteTenant({{ t.company.id }}, '{{ t.company.name|escapejs }}', '{{ t.company.schema_name|escapejs }}')" class="btn-app-ghost" style="padding:4px 9px; font-size:.76rem; color:#f87171; margin-left:4px;" title="Delete Tenant and Schema">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" style="text-align:center; padding:24px; color:#64748b;">No tenant companies configured yet.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Ecosystem Platforms Directory -->
+        <div class="hub-card" id="ecosystem-section">
+            <div class="hub-card-header">
+                <div>
+                    <h3 style="font-size:1.1rem; font-weight:700; color:#f1f5f9;">Ecosystem Server Connections</h3>
+                    <p style="color:#94a3b8; font-size:.8rem; margin-top:2px;">Manage connected servers and services directly in the platform suite.</p>
+                </div>
+                <button onclick="openAddPlatformModal()" class="btn-app-primary" style="background:linear-gradient(135deg, #0d9488, #14b8a6);">
+                    <i class="fa-solid fa-plus"></i> Connect Server
+                </button>
+            </div>
+
+            <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;">
+                {% for p in platforms %}
+                <div style="background:#0f172a; border:1px solid var(--border-color); border-radius:10px; padding:16px; display:flex; flex-direction:column; justify-content:space-between;">
+                    <div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                            <div style="width:34px; height:34px; border-radius:8px; background:rgba(255,255,255,0.06); color:{{ p.accent_color }}; display:flex; align-items:center; justify-content:center;">
+                                <i class="{{ p.icon_class }}"></i>
+                            </div>
+                            <div style="display:flex; align-items:center; gap:6px;">
+                                {% if p.badge_label %}
+                                <span style="font-size:.68rem; font-weight:700; text-transform:uppercase; padding:2px 8px; border-radius:10px; background:rgba(255,255,255,0.08); color:{{ p.accent_color }};">
+                                    {{ p.badge_label }}
+                                </span>
+                                {% endif %}
+                                <span style="font-size:.68rem; font-weight:700; padding:2px 6px; border-radius:6px; {{ p.is_active|yesno:'background:rgba(16,185,129,0.15); color:#34d399;,background:rgba(239,68,68,0.15); color:#f87171;' }}">
+                                    {{ p.is_active|yesno:'ACTIVE,PAUSED' }}
+                                </span>
+                            </div>
+                        </div>
+                        <h4 style="font-size:.95rem; font-weight:700; color:#f1f5f9;">{{ p.name }}</h4>
+                        <div style="font-size:.76rem; color:{{ p.accent_color }}; font-weight:600; margin-bottom:8px;">{{ p.role_title }}</div>
+                        <div style="font-size:.74rem; color:#64748b; font-family:monospace; margin-bottom:10px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                            {{ p.server_url }}
+                        </div>
+                    </div>
+                    <div style="padding-top:10px; border-top:1px solid #1e293b; margin-top:12px; display:flex; gap:6px; align-items:center;">
+                        {% if p.is_current_platform %}
+                        <span style="font-size:.78rem; color:var(--teal-500); font-weight:600; flex:1;"><i class="fa-solid fa-circle-dot"></i> This Hub</span>
+                        {% else %}
+                        <a href="{{ p.server_url }}" target="_blank" class="btn-app-ghost" style="flex:1; justify-content:center; padding:6px 10px; font-size:.78rem;">
+                            <i class="fa-solid fa-arrow-up-right-from-square" style="color:{{ p.accent_color }};"></i> Open
+                        </a>
+                        {% endif %}
+                        <button onclick="openEditPlatformModal({{ p.id }})" class="btn-app-ghost" style="padding:6px 9px; font-size:.78rem; color:#38bdf8;" title="Edit Server Configuration">
+                            <i class="fa-solid fa-pen-to-square"></i>
+                        </button>
+                        {% if not p.is_current_platform %}
+                        <button onclick="deleteCommunityPlatform({{ p.id }}, '{{ p.name|escapejs }}')" class="btn-app-ghost" style="padding:6px 9px; font-size:.78rem; color:#f87171;" title="Remove Server Connection">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+                {% empty %}
+                <div style="grid-column:1/-1; text-align:center; padding:20px; color:#64748b;">No platforms configured.</div>
+                {% endfor %}
+            </div>
+        </div>
+    </main>
+
+    <!-- ── Interactive JavaScript Logic ─────────────────────────────── -->
+    <script>
+        async function openProvisionModal() {
+            const { value: formValues } = await Swal.fire({
+                title: 'Provision New Retail Enterprise',
+                background: '#1e293b',
+                color: '#f8fafc',
+                confirmButtonColor: '#4f46e5',
+                confirmButtonText: 'Provision Schema',
+                showCancelButton: true,
+                cancelButtonColor: '#475569',
+                html: `
+                    <div style="text-align:left; font-size:.85rem; display:flex; flex-direction:column; gap:12px; margin-top:12px;">
+                        <div>
+                            <label style="color:#94a3b8; display:block; margin-bottom:4px; font-weight:600;">Enterprise Legal Name *</label>
+                            <input id="swal-comp-name" class="swal2-input" placeholder="e.g. Metro Supermarkets Pvt Ltd" style="margin:0; width:100%; background:#0f172a; border:1px solid #334155; color:#fff; border-radius:8px; padding:10px; font-size:.9rem;">
+                        </div>
+                        <div>
+                            <label style="color:#94a3b8; display:block; margin-bottom:4px; font-weight:600;">Workspace Subdomain *</label>
+                            <input id="swal-subdomain" class="swal2-input" placeholder="e.g. metrosuper" style="margin:0; width:100%; background:#0f172a; border:1px solid #334155; color:#fff; border-radius:8px; padding:10px; font-size:.9rem;">
+                            <small style="color:#64748b; font-size:.72rem;">Subdomain prefix for tenant routing. E.g. metrosuper.localhost</small>
+                        </div>
+                        <div>
+                            <label style="color:#94a3b8; display:block; margin-bottom:4px; font-weight:600;">Contact Email</label>
+                            <input id="swal-email" type="email" class="swal2-input" placeholder="hq@metrosuper.co.zw" style="margin:0; width:100%; background:#0f172a; border:1px solid #334155; color:#fff; border-radius:8px; padding:10px; font-size:.9rem;">
+                        </div>
+                    </div>
+                `,
+                focusConfirm: false,
+                preConfirm: () => {
+                    const name = document.getElementById('swal-comp-name').value.trim();
+                    const sub = document.getElementById('swal-subdomain').value.trim();
+                    const email = document.getElementById('swal-email').value.trim();
+                    if (!name || !sub) {
+                        Swal.showValidationMessage('Enterprise name and subdomain are required.');
+                        return false;
+                    }
+                    return { company_name: name, subdomain: sub, email: email };
+                }
+            });
+
+            if (formValues) {
+                Swal.fire({
+                    title: 'Provisioning Enterprise Schema...',
+                    text: 'Allocating isolated database schema and registering domain routing.',
+                    background: '#1e293b',
+                    color: '#f8fafc',
+                    allowOutsideClick: false,
+                    didOpen: () => Swal.showLoading()
+                });
+
+                const formData = new FormData();
+                formData.append('company_name', formValues.company_name);
+                formData.append('subdomain', formValues.subdomain);
+                formData.append('email', formValues.email);
+
+                try {
+                    const res = await fetch('/register/', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const data = await res.json();
+                    if (data.type === 'success') {
+                        await Swal.fire({
+                            title: 'Enterprise Workspace Active!',
+                            text: data.message,
+                            icon: 'success',
+                            background: '#1e293b',
+                            color: '#f8fafc',
+                            confirmButtonColor: '#4f46e5'
+                        });
+                        window.location.reload();
+                    } else {
+                        Swal.fire({
+                            title: data.title || 'Validation Error',
+                            text: data.message || 'Could not provision workspace',
+                            icon: 'warning',
+                            background: '#1e293b',
+                            color: '#f8fafc'
+                        });
+                    }
+                } catch (err) {
+                    Swal.fire({ title: 'Error', text: err.message, icon: 'error', background: '#1e293b', color: '#f8fafc' });
+                }
+            }
+        }
+
+        async function toggleTenantStatus(companyId, companyName, isCurrentlyActive) {
+            const actionVerb = isCurrentlyActive ? 'pause / suspend' : 'resume / activate';
+            const confirmed = await Swal.fire({
+                title: `${isCurrentlyActive ? 'Pause' : 'Resume'} Tenant Workspace?`,
+                text: `Are you sure you want to ${actionVerb} access to ${companyName}? Users will ${isCurrentlyActive ? 'be temporarily blocked from opening' : 'regain access to'} their dashboard.`,
+                icon: isCurrentlyActive ? 'warning' : 'question',
+                background: '#1e293b',
+                color: '#f8fafc',
+                showCancelButton: true,
+                confirmButtonColor: isCurrentlyActive ? '#eab308' : '#10b981',
+                cancelButtonColor: '#475569',
+                confirmButtonText: `Yes, ${isCurrentlyActive ? 'pause' : 'resume'}`
+            });
+
+            if (confirmed.isConfirmed) {
+                try {
+                    const res = await fetch(`/workspaces/toggle/${companyId}/`, {
+                        method: 'POST',
+                        headers: { 'X-CSRFToken': '{{ csrf_token }}' }
+                    });
+                    const data = await res.json();
+                    if (data.type === 'success') {
+                        await Swal.fire({
+                            title: 'Status Updated',
+                            text: data.message,
+                            icon: 'success',
+                            background: '#1e293b',
+                            color: '#f8fafc',
+                            confirmButtonColor: '#4f46e5'
+                        });
+                        window.location.reload();
+                    } else {
+                        Swal.fire({ title: 'Error', text: data.message, icon: 'warning', background: '#1e293b', color: '#f8fafc' });
+                    }
+                } catch (err) {
+                    Swal.fire({ title: 'Error', text: err.message, icon: 'error', background: '#1e293b', color: '#f8fafc' });
+                }
+            }
+        }
+
+        async function openEditTenantModal(companyId) {
+            Swal.fire({
+                title: 'Loading Enterprise Data...',
+                background: '#1e293b',
+                color: '#f8fafc',
+                didOpen: () => Swal.showLoading()
+            });
+
+            try {
+                const res = await fetch(`/workspaces/details/${companyId}/`);
+                const data = await res.json();
+                if (data.type !== 'success') {
+                    Swal.fire({ title: 'Error', text: data.message, icon: 'error', background: '#1e293b', color: '#f8fafc' });
+                    return;
+                }
+
+                const c = data.company;
+                const { value: formValues } = await Swal.fire({
+                    title: `Update ${c.name}`,
+                    background: '#1e293b',
+                    color: '#f8fafc',
+                    confirmButtonColor: '#0ea5e9',
+                    confirmButtonText: 'Save Changes',
+                    showCancelButton: true,
+                    cancelButtonColor: '#475569',
+                    width: '600px',
+                    html: `
+                        <div style="text-align:left; font-size:.85rem; display:flex; flex-direction:column; gap:12px; margin-top:8px;">
+                            <div>
+                                <label style="color:#94a3b8; display:block; margin-bottom:3px; font-weight:600;">Enterprise Legal Name *</label>
+                                <input id="edit-name" class="swal2-input" value="${c.name || ''}" style="margin:0; width:100%; background:#0f172a; border:1px solid #334155; color:#fff; border-radius:8px; padding:9px; font-size:.88rem;">
+                            </div>
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                                <div>
+                                    <label style="color:#94a3b8; display:block; margin-bottom:3px; font-weight:600;">Trade / Brand Name</label>
+                                    <input id="edit-trade-name" class="swal2-input" value="${c.trade_name || ''}" placeholder="e.g. Metro Express" style="margin:0; width:100%; background:#0f172a; border:1px solid #334155; color:#fff; border-radius:8px; padding:9px; font-size:.88rem;">
+                                </div>
+                                <div>
+                                    <label style="color:#94a3b8; display:block; margin-bottom:3px; font-weight:600;">Currency Code & Symbol</label>
+                                    <div style="display:flex; gap:6px;">
+                                        <input id="edit-currency" class="swal2-input" value="${c.currency_code || 'USD'}" style="margin:0; width:65%; background:#0f172a; border:1px solid #334155; color:#fff; border-radius:8px; padding:9px; font-size:.88rem;">
+                                        <input id="edit-symbol" class="swal2-input" value="${c.currency_symbol || '$'}" style="margin:0; width:35%; background:#0f172a; border:1px solid #334155; color:#fff; border-radius:8px; padding:9px; font-size:.88rem;">
+                                    </div>
+                                </div>
+                            </div>
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                                <div>
+                                    <label style="color:#94a3b8; display:block; margin-bottom:3px; font-weight:600;">Contact Email</label>
+                                    <input id="edit-email" class="swal2-input" value="${c.email || ''}" style="margin:0; width:100%; background:#0f172a; border:1px solid #334155; color:#fff; border-radius:8px; padding:9px; font-size:.88rem;">
+                                </div>
+                                <div>
+                                    <label style="color:#94a3b8; display:block; margin-bottom:3px; font-weight:600;">Business Phone</label>
+                                    <input id="edit-phone" class="swal2-input" value="${c.phone || ''}" style="margin:0; width:100%; background:#0f172a; border:1px solid #334155; color:#fff; border-radius:8px; padding:9px; font-size:.88rem;">
+                                </div>
+                            </div>
+                            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;">
+                                <div>
+                                    <label style="color:#94a3b8; display:block; margin-bottom:3px; font-weight:600; font-size:.78rem;">TIN Number</label>
+                                    <input id="edit-tin" class="swal2-input" value="${c.tin_number || ''}" style="margin:0; width:100%; background:#0f172a; border:1px solid #334155; color:#fff; border-radius:8px; padding:8px; font-size:.82rem;">
+                                </div>
+                                <div>
+                                    <label style="color:#94a3b8; display:block; margin-bottom:3px; font-weight:600; font-size:.78rem;">VAT Number</label>
+                                    <input id="edit-vat" class="swal2-input" value="${c.vat_number || ''}" style="margin:0; width:100%; background:#0f172a; border:1px solid #334155; color:#fff; border-radius:8px; padding:8px; font-size:.82rem;">
+                                </div>
+                                <div>
+                                    <label style="color:#94a3b8; display:block; margin-bottom:3px; font-weight:600; font-size:.78rem;">PRZ Number</label>
+                                    <input id="edit-prz" class="swal2-input" value="${c.prz_number || ''}" style="margin:0; width:100%; background:#0f172a; border:1px solid #334155; color:#fff; border-radius:8px; padding:8px; font-size:.82rem;">
+                                </div>
+                            </div>
+                            <div>
+                                <label style="color:#94a3b8; display:block; margin-bottom:3px; font-weight:600;">Head Office Address</label>
+                                <textarea id="edit-address" style="width:100%; height:60px; background:#0f172a; border:1px solid #334155; color:#fff; border-radius:8px; padding:8px; font-size:.84rem; resize:none;">${c.address || ''}</textarea>
+                            </div>
+                        </div>
+                    `,
+                    focusConfirm: false,
+                    preConfirm: () => {
+                        const name = document.getElementById('edit-name').value.trim();
+                        if (!name) {
+                            Swal.showValidationMessage('Legal name is required.');
+                            return false;
+                        }
+                        return {
+                            name: name,
+                            trade_name: document.getElementById('edit-trade-name').value.trim(),
+                            currency_code: document.getElementById('edit-currency').value.trim(),
+                            currency_symbol: document.getElementById('edit-symbol').value.trim(),
+                            email: document.getElementById('edit-email').value.trim(),
+                            phone: document.getElementById('edit-phone').value.trim(),
+                            tin_number: document.getElementById('edit-tin').value.trim(),
+                            vat_number: document.getElementById('edit-vat').value.trim(),
+                            prz_number: document.getElementById('edit-prz').value.trim(),
+                            address: document.getElementById('edit-address').value.trim(),
+                        };
+                    }
+                });
+
+                if (formValues) {
+                    const fd = new FormData();
+                    Object.keys(formValues).forEach(k => fd.append(k, formValues[k]));
+                    const saveRes = await fetch(`/workspaces/update/${companyId}/`, {
+                        method: 'POST',
+                        headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+                        body: fd
+                    });
+                    const saveJson = await saveRes.json();
+                    if (saveJson.type === 'success') {
+                        await Swal.fire({
+                            title: 'Saved!',
+                            text: saveJson.message,
+                            icon: 'success',
+                            background: '#1e293b',
+                            color: '#f8fafc',
+                            confirmButtonColor: '#4f46e5'
+                        });
+                        window.location.reload();
+                    } else {
+                        Swal.fire({ title: 'Error', text: saveJson.message, icon: 'warning', background: '#1e293b', color: '#f8fafc' });
+                    }
+                }
+            } catch (err) {
+                Swal.fire({ title: 'Error', text: err.message, icon: 'error', background: '#1e293b', color: '#f8fafc' });
+            }
+        }
+
+        async function deleteTenant(companyId, companyName, schemaName) {
+            const confirmed = await Swal.fire({
+                title: `Delete ${companyName}?`,
+                html: `
+                    <div style="text-align:left; font-size:.85rem; color:#f87171;">
+                        <p style="margin-bottom:8px;"><strong>WARNING: High-Risk Action!</strong></p>
+                        <p>This will permanently delete the tenant enterprise record, its domain routing, all user memberships, and completely <strong>DROP the PostgreSQL schema <code style="background:#0f172a; padding:2px 5px; border-radius:4px; color:#fff;">${schemaName}</code></strong> and all its branch data.</p>
+                        <p style="margin-top:8px; color:#94a3b8;">This action cannot be undone.</p>
+                    </div>
+                `,
+                icon: 'warning',
+                background: '#1e293b',
+                color: '#f8fafc',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#475569',
+                confirmButtonText: 'Yes, permanently delete',
+                input: 'text',
+                inputPlaceholder: `Type '${schemaName}' to confirm deletion`,
+                inputValidator: (value) => {
+                    if (value !== schemaName) {
+                        return `Please type '${schemaName}' exactly to confirm.`;
+                    }
+                }
+            });
+
+            if (confirmed.isConfirmed) {
+                Swal.fire({
+                    title: 'Dropping Schema...',
+                    text: 'Purging database tables and records.',
+                    background: '#1e293b',
+                    color: '#f8fafc',
+                    didOpen: () => Swal.showLoading()
+                });
+
+                try {
+                    const res = await fetch(`/workspaces/delete/${companyId}/`, {
+                        method: 'POST',
+                        headers: { 'X-CSRFToken': '{{ csrf_token }}' }
+                    });
+                    const data = await res.json();
+                    if (data.type === 'success') {
+                        await Swal.fire({
+                            title: 'Deleted',
+                            text: data.message,
+                            icon: 'success',
+                            background: '#1e293b',
+                            color: '#f8fafc',
+                            confirmButtonColor: '#4f46e5'
+                        });
+                        window.location.reload();
+                    } else {
+                        Swal.fire({ title: 'Error', text: data.message, icon: 'error', background: '#1e293b', color: '#f8fafc' });
+                    }
+                } catch (err) {
+                    Swal.fire({ title: 'Error', text: err.message, icon: 'error', background: '#1e293b', color: '#f8fafc' });
+                }
+            }
+        }
+
+        async function openUsersModal(companyId, companyName) {
+            Swal.fire({
+                title: 'Loading Users...',
+                background: '#1e293b',
+                color: '#f8fafc',
+                didOpen: () => Swal.showLoading()
+            });
+
+            try {
+                const res = await fetch(`/workspaces/details/${companyId}/`);
+                const data = await res.json();
+                if (data.type !== 'success') {
+                    Swal.fire({ title: 'Error', text: data.message, icon: 'error', background: '#1e293b', color: '#f8fafc' });
+                    return;
+                }
+
+                const users = data.users || [];
+                let rowsHtml = '';
+                if (users.length === 0) {
+                    rowsHtml = `<tr><td colspan="4" style="text-align:center; padding:16px; color:#64748b;">No users linked to this tenant yet.</td></tr>`;
+                } else {
+                    users.forEach(u => {
+                        rowsHtml += `
+                            <tr style="border-bottom:1px solid rgba(51,65,85,0.4);">
+                                <td style="padding:10px; font-weight:600; color:#f8fafc;">
+                                    ${u.full_name}
+                                    <div style="font-size:.72rem; color:#94a3b8;">${u.email} (@${u.username})</div>
+                                </td>
+                                <td style="padding:10px;">
+                                    <span style="font-size:.75rem; background:rgba(99,102,241,0.15); color:#a5b4fc; padding:2px 7px; border-radius:6px; font-weight:600;">
+                                        ${u.role_display}
+                                    </span>
+                                </td>
+                                <td style="padding:10px;">
+                                    <span style="font-size:.72rem; padding:2px 7px; border-radius:10px; font-weight:700; ${u.is_active ? 'background:rgba(52,211,153,0.15); color:#34d399;' : 'background:rgba(248,113,113,0.15); color:#f87171;'}">
+                                        ${u.is_active ? 'ACTIVE' : 'PAUSED'}
+                                    </span>
+                                </td>
+                                <td style="padding:10px; text-align:right; white-space:nowrap;">
+                                    <button onclick="toggleUserMembership(${u.membership_id}, ${companyId}, '${companyName}')" style="background:#0f172a; border:1px solid #334155; color:${u.is_active ? '#fbbf24' : '#34d399'}; padding:3px 8px; border-radius:6px; font-size:.74rem; cursor:pointer;" title="${u.is_active ? 'Pause user' : 'Resume user'}">
+                                        ${u.is_active ? '<i class=\"fa-solid fa-pause\"></i>' : '<i class=\"fa-solid fa-play\"></i>'}
+                                    </button>
+                                    <button onclick="deleteUserMembership(${u.membership_id}, ${companyId}, '${companyName}', '${u.email}')" style="background:#0f172a; border:1px solid #334155; color:#f87171; padding:3px 8px; border-radius:6px; font-size:.74rem; cursor:pointer; margin-left:4px;" title="Unlink user">
+                                        <i class="fa-solid fa-trash-can"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                }
+
+                await Swal.fire({
+                    title: `Manage Users &bull; ${companyName}`,
+                    background: '#1e293b',
+                    color: '#f8fafc',
+                    width: '740px',
+                    showConfirmButton: false,
+                    showCloseButton: true,
+                    html: `
+                        <div style="text-align:left; font-size:.85rem;">
+                            <!-- Add User Section -->
+                            <div style="background:#0f172a; border:1px solid #334155; border-radius:10px; padding:14px; margin-bottom:18px;">
+                                <div style="font-size:.82rem; font-weight:700; text-transform:uppercase; color:#818cf8; letter-spacing:.05em; margin-bottom:10px; display:flex; align-items:center; gap:6px;">
+                                    <i class="fa-solid fa-user-plus"></i> Add User to Enterprise
+                                </div>
+                                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
+                                    <div>
+                                        <label style="color:#94a3b8; font-size:.75rem; display:block; margin-bottom:3px;">User Email *</label>
+                                        <input id="new-u-email" type="email" placeholder="e.g. employee@store.co.zw" style="width:100%; background:#1e293b; border:1px solid #334155; color:#fff; border-radius:6px; padding:7px 10px; font-size:.84rem;">
+                                    </div>
+                                    <div>
+                                        <label style="color:#94a3b8; font-size:.75rem; display:block; margin-bottom:3px;">Role Tier</label>
+                                        <select id="new-u-role" style="width:100%; background:#1e293b; border:1px solid #334155; color:#fff; border-radius:6px; padding:7px 10px; font-size:.84rem;">
+                                            <option value="STAFF">Store Staff (Read & POS)</option>
+                                            <option value="SUPERVISOR">Supervisor (Shift Oversight)</option>
+                                            <option value="BRANCH_MANAGER">Branch Manager (Store Lead)</option>
+                                            <option value="COMPANY_MANAGER">Company Manager (Executive / All Branches)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
+                                    <div>
+                                        <label style="color:#94a3b8; font-size:.75rem; display:block; margin-bottom:3px;">Full Name (Optional)</label>
+                                        <input id="new-u-name" placeholder="John Doe" style="width:100%; background:#1e293b; border:1px solid #334155; color:#fff; border-radius:6px; padding:7px 10px; font-size:.84rem;">
+                                    </div>
+                                    <div>
+                                        <label style="color:#94a3b8; font-size:.75rem; display:block; margin-bottom:3px;">Initial Password (Optional)</label>
+                                        <input id="new-u-pass" type="password" placeholder="Default: password123" style="width:100%; background:#1e293b; border:1px solid #334155; color:#fff; border-radius:6px; padding:7px 10px; font-size:.84rem;">
+                                    </div>
+                                </div>
+                                <button onclick="submitAddTenantUser(${companyId}, '${companyName}')" style="background:#4f46e5; border:none; color:#fff; padding:7px 16px; border-radius:6px; font-size:.82rem; font-weight:600; cursor:pointer;">
+                                    <i class="fa-solid fa-plus"></i> Link User to ${companyName}
+                                </button>
+                            </div>
+
+                            <!-- Existing Users List -->
+                            <div style="max-height:280px; overflow-y:auto; border:1px solid #334155; border-radius:10px;">
+                                <table style="width:100%; border-collapse:collapse; font-size:.82rem;">
+                                    <thead>
+                                        <tr style="background:#0f172a; border-bottom:1px solid #334155; text-align:left; color:#94a3b8;">
+                                            <th style="padding:8px 10px;">User</th>
+                                            <th style="padding:8px 10px;">Role</th>
+                                            <th style="padding:8px 10px;">Status</th>
+                                            <th style="padding:8px 10px; text-align:right;">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${rowsHtml}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    `
+                });
+            } catch (err) {
+                Swal.fire({ title: 'Error', text: err.message, icon: 'error', background: '#1e293b', color: '#f8fafc' });
+            }
+        }
+
+        async function submitAddTenantUser(companyId, companyName) {
+            const email = (document.getElementById('new-u-email').value || '').trim();
+            const role = document.getElementById('new-u-role').value;
+            const name = (document.getElementById('new-u-name').value || '').trim();
+            const pass = (document.getElementById('new-u-pass').value || '').trim();
+
+            if (!email) {
+                Swal.showValidationMessage('Please provide an email address.');
+                return;
+            }
+
+            const fd = new FormData();
+            fd.append('email', email);
+            fd.append('role', role);
+            if (name) {
+                const parts = name.split(' ');
+                fd.append('first_name', parts[0]);
+                if (parts.length > 1) fd.append('last_name', parts.slice(1).join(' '));
+            }
+            if (pass) fd.append('password', pass);
+
+            try {
+                const res = await fetch(`/workspaces/users/add/${companyId}/`, {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+                    body: fd
+                });
+                const data = await res.json();
+                if (data.type === 'success') {
+                    openUsersModal(companyId, companyName);
+                } else {
+                    Swal.fire({ title: 'Error', text: data.message, icon: 'warning', background: '#1e293b', color: '#f8fafc' });
+                }
+            } catch (err) {
+                Swal.fire({ title: 'Error', text: err.message, icon: 'error', background: '#1e293b', color: '#f8fafc' });
+            }
+        }
+
+        async function toggleUserMembership(membershipId, companyId, companyName) {
+            try {
+                const res = await fetch(`/workspaces/users/toggle/${membershipId}/`, {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': '{{ csrf_token }}' }
+                });
+                const data = await res.json();
+                if (data.type === 'success') {
+                    openUsersModal(companyId, companyName);
+                } else {
+                    Swal.fire({ title: 'Error', text: data.message, icon: 'warning', background: '#1e293b', color: '#f8fafc' });
+                }
+            } catch (err) {
+                Swal.fire({ title: 'Error', text: err.message, icon: 'error', background: '#1e293b', color: '#f8fafc' });
+            }
+        }
+
+        async function deleteUserMembership(membershipId, companyId, companyName, userEmail) {
+            const confirmed = await Swal.fire({
+                title: 'Unlink User?',
+                text: `Remove ${userEmail} from ${companyName}? The user will lose access to this enterprise workspace.`,
+                icon: 'question',
+                background: '#1e293b',
+                color: '#f8fafc',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#475569',
+                confirmButtonText: 'Yes, remove access'
+            });
+
+            if (confirmed.isConfirmed) {
+                try {
+                    const res = await fetch(`/workspaces/users/delete/${membershipId}/`, {
+                        method: 'POST',
+                        headers: { 'X-CSRFToken': '{{ csrf_token }}' }
+                    });
+                    const data = await res.json();
+                    if (data.type === 'success') {
+                        openUsersModal(companyId, companyName);
+                    } else {
+                        Swal.fire({ title: 'Error', text: data.message, icon: 'warning', background: '#1e293b', color: '#f8fafc' });
+                    }
+                } catch (err) {
+                    Swal.fire({ title: 'Error', text: err.message, icon: 'error', background: '#1e293b', color: '#f8fafc' });
+                }
+            }
+        }
+        // Sidebar Width Toggle (Desktop)
+        function toggleSidebarCollapse() {
+            if (window.innerWidth <= 900) {
+                toggleMobileSidebar();
+                return;
+            }
+            const sidebar = document.getElementById('sidebar');
+            const isCurrentlyCollapsed = sidebar.classList.contains('collapsed') || document.documentElement.classList.contains('sidebar-collapsed-mode');
+            if (isCurrentlyCollapsed) {
+                sidebar.classList.remove('collapsed');
+                document.documentElement.classList.remove('sidebar-collapsed-mode');
+                try { localStorage.setItem('crh_admin_sidebar_collapsed', 'false'); } catch(e) {}
+            } else {
+                sidebar.classList.add('collapsed');
+                document.documentElement.classList.add('sidebar-collapsed-mode');
+                try { localStorage.setItem('crh_admin_sidebar_collapsed', 'true'); } catch(e) {}
+            }
+        }
+
+        // Mobile Drawer Toggle
+        function toggleMobileSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            if (sidebar) sidebar.classList.toggle('open');
+            if (overlay) overlay.classList.toggle('active');
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('#sidebar .nav-item').forEach(link => {
+                link.addEventListener('click', function() {
+                    if (window.innerWidth <= 900 && !link.onclick) {
+                        const sidebar = document.getElementById('sidebar');
+                        const overlay = document.getElementById('sidebar-overlay');
+                        if (sidebar) sidebar.classList.remove('open');
+                        if (overlay) overlay.classList.remove('active');
+                    }
+                });
+            });
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    const sidebar = document.getElementById('sidebar');
+                    const overlay = document.getElementById('sidebar-overlay');
+                    if (sidebar) sidebar.classList.remove('open');
+                    if (overlay) overlay.classList.remove('active');
+                }
+            });
+        });
+
+        // Platform / Server Connection Management Modals
+        async function openAddPlatformModal() {
+            const { value: formValues } = await Swal.fire({
+                title: 'Connect Ecosystem Server',
+                background: '#1e293b',
+                color: '#f8fafc',
+                confirmButtonColor: '#0d9488',
+                confirmButtonText: 'Add Server Connection',
+                showCancelButton: true,
+                cancelButtonColor: '#475569',
+                width: '580px',
+                html: `
+                    <div style="text-align:left; font-size:.85rem; display:flex; flex-direction:column; gap:12px; margin-top:10px;">
+                        <div>
+                            <label style="color:#94a3b8; display:block; margin-bottom:4px; font-weight:600;">Platform / Service Name *</label>
+                            <input id="swal-plat-name" class="swal2-input" placeholder="e.g. Clarity Wholesale LAN" style="margin:0; width:100%; background:#0f172a; border:1px solid #334155; color:#fff; border-radius:8px; padding:10px; font-size:.9rem;">
+                        </div>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                            <div>
+                                <label style="color:#94a3b8; display:block; margin-bottom:4px; font-weight:600;">Role Subtitle *</label>
+                                <input id="swal-plat-role" class="swal2-input" placeholder="e.g. Bulk Distribution & Depots" style="margin:0; width:100%; background:#0f172a; border:1px solid #334155; color:#fff; border-radius:8px; padding:10px; font-size:.88rem;">
+                            </div>
+                            <div>
+                                <label style="color:#94a3b8; display:block; margin-bottom:4px; font-weight:600;">System Code Identifier</label>
+                                <input id="swal-plat-code" class="swal2-input" placeholder="e.g. wholesale_lan" style="margin:0; width:100%; background:#0f172a; border:1px solid #334155; color:#fff; border-radius:8px; padding:10px; font-size:.88rem;">
+                            </div>
+                        </div>
+                        <div>
+                            <label style="color:#94a3b8; display:block; margin-bottom:4px; font-weight:600;">Server URL (LAN or Cloud) *</label>
+                            <input id="swal-plat-url" class="swal2-input" placeholder="e.g. http://localhost:8001/ or https://wholesale.domain.com" style="margin:0; width:100%; background:#0f172a; border:1px solid #334155; color:#fff; border-radius:8px; padding:10px; font-size:.9rem;">
+                        </div>
+                        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
+                            <div>
+                                <label style="color:#94a3b8; display:block; margin-bottom:4px; font-weight:600;">FontAwesome Icon</label>
+                                <input id="swal-plat-icon" class="swal2-input" value="fa-solid fa-server" style="margin:0; width:100%; background:#0f172a; border:1px solid #334155; color:#fff; border-radius:8px; padding:10px; font-size:.88rem;">
+                            </div>
+                            <div>
+                                <label style="color:#94a3b8; display:block; margin-bottom:4px; font-weight:600;">Accent Color</label>
+                                <input id="swal-plat-color" type="color" value="#14b8a6" style="margin:0; width:100%; height:42px; background:#0f172a; border:1px solid #334155; border-radius:8px; cursor:pointer;">
+                            </div>
+                            <div>
+                                <label style="color:#94a3b8; display:block; margin-bottom:4px; font-weight:600;">Badge Pill</label>
+                                <input id="swal-plat-badge" class="swal2-input" placeholder="e.g. Port 8001" style="margin:0; width:100%; background:#0f172a; border:1px solid #334155; color:#fff; border-radius:8px; padding:10px; font-size:.88rem;">
+                            </div>
+                        </div>
+                    </div>
+                `,
+                focusConfirm: false,
+                preConfirm: () => {
+                    const name = document.getElementById('swal-plat-name').value.trim();
+                    const url = document.getElementById('swal-plat-url').value.trim();
+                    if (!name || !url) {
+                        Swal.showValidationMessage('Platform name and server URL are required.');
+                        return false;
+                    }
+                    return {
+                        name: name,
+                        role_title: document.getElementById('swal-plat-role').value.trim(),
+                        code: document.getElementById('swal-plat-code').value.trim(),
+                        server_url: url,
+                        icon_class: document.getElementById('swal-plat-icon').value.trim(),
+                        accent_color: document.getElementById('swal-plat-color').value,
+                        badge_label: document.getElementById('swal-plat-badge').value.trim(),
+                    };
+                }
+            });
+
+            if (formValues) {
+                const fd = new FormData();
+                Object.keys(formValues).forEach(k => fd.append(k, formValues[k]));
+                try {
+                    const res = await fetch('/workspaces/platforms/add/', {
+                        method: 'POST',
+                        headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+                        body: fd
+                    });
+                    const data = await res.json();
+                    if (data.type === 'success') {
+                        await Swal.fire({ title: 'Connected!', text: data.message, icon: 'success', background: '#1e293b', color: '#f8fafc', confirmButtonColor: '#0d9488' });
+                        window.location.reload();
+                    } else {
+                        Swal.fire({ title: 'Error', text: data.message, icon: 'warning', background: '#1e293b', color: '#f8fafc' });
+                    }
+                } catch (err) {
+                    Swal.fire({ title: 'Error', text: err.message, icon: 'error', background: '#1e293b', color: '#f8fafc' });
+                }
+            }
+        }
+
+        async function openEditPlatformModal(platformId) {
+            Swal.fire({ title: 'Loading...', background: '#1e293b', color: '#f8fafc', didOpen: () => Swal.showLoading() });
+            try {
+                const res = await fetch(`/workspaces/platforms/details/${platformId}/`);
+                const data = await res.json();
+                if (data.type !== 'success') {
+                    Swal.fire({ title: 'Error', text: data.message, icon: 'error', background: '#1e293b', color: '#f8fafc' });
+                    return;
+                }
+                const p = data.platform;
+                const { value: formValues } = await Swal.fire({
+                    title: `Configure ${p.name}`,
+                    background: '#1e293b',
+                    color: '#f8fafc',
+                    confirmButtonColor: '#38bdf8',
+                    confirmButtonText: 'Save Configuration',
+                    showCancelButton: true,
+                    cancelButtonColor: '#475569',
+                    width: '580px',
+                    html: `
+                        <div style="text-align:left; font-size:.85rem; display:flex; flex-direction:column; gap:12px; margin-top:10px;">
+                            <div>
+                                <label style="color:#94a3b8; display:block; margin-bottom:4px; font-weight:600;">Platform Title *</label>
+                                <input id="swal-edit-plat-name" class="swal2-input" value="${p.name}" style="margin:0; width:100%; background:#0f172a; border:1px solid #334155; color:#fff; border-radius:8px; padding:10px; font-size:.9rem;">
+                            </div>
+                            <div>
+                                <label style="color:#94a3b8; display:block; margin-bottom:4px; font-weight:600;">Role Subtitle</label>
+                                <input id="swal-edit-plat-role" class="swal2-input" value="${p.role_title}" style="margin:0; width:100%; background:#0f172a; border:1px solid #334155; color:#fff; border-radius:8px; padding:10px; font-size:.88rem;">
+                            </div>
+                            <div>
+                                <label style="color:#94a3b8; display:block; margin-bottom:4px; font-weight:600;">Server Link / Endpoint *</label>
+                                <input id="swal-edit-plat-url" class="swal2-input" value="${p.server_url}" style="margin:0; width:100%; background:#0f172a; border:1px solid #334155; color:#fff; border-radius:8px; padding:10px; font-size:.9rem;">
+                            </div>
+                            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
+                                <div>
+                                    <label style="color:#94a3b8; display:block; margin-bottom:4px; font-weight:600;">Icon Class</label>
+                                    <input id="swal-edit-plat-icon" class="swal2-input" value="${p.icon_class}" style="margin:0; width:100%; background:#0f172a; border:1px solid #334155; color:#fff; border-radius:8px; padding:10px; font-size:.88rem;">
+                                </div>
+                                <div>
+                                    <label style="color:#94a3b8; display:block; margin-bottom:4px; font-weight:600;">Accent Color</label>
+                                    <input id="swal-edit-plat-color" type="color" value="${p.accent_color}" style="margin:0; width:100%; height:42px; background:#0f172a; border:1px solid #334155; border-radius:8px; cursor:pointer;">
+                                </div>
+                                <div>
+                                    <label style="color:#94a3b8; display:block; margin-bottom:4px; font-weight:600;">Badge</label>
+                                    <input id="swal-edit-plat-badge" class="swal2-input" value="${p.badge_label || ''}" style="margin:0; width:100%; background:#0f172a; border:1px solid #334155; color:#fff; border-radius:8px; padding:10px; font-size:.88rem;">
+                                </div>
+                            </div>
+                            <div>
+                                <label style="color:#94a3b8; display:block; margin-bottom:4px; font-weight:600;">Active Status</label>
+                                <select id="swal-edit-plat-active" style="width:100%; background:#0f172a; border:1px solid #334155; color:#fff; border-radius:8px; padding:10px; font-size:.88rem;">
+                                    <option value="true" ${p.is_active ? 'selected' : ''}>Active (Visible to users)</option>
+                                    <option value="false" ${!p.is_active ? 'selected' : ''}>Paused / Hidden</option>
+                                </select>
+                            </div>
+                        </div>
+                    `,
+                    focusConfirm: false,
+                    preConfirm: () => {
+                        return {
+                            name: document.getElementById('swal-edit-plat-name').value.trim(),
+                            role_title: document.getElementById('swal-edit-plat-role').value.trim(),
+                            server_url: document.getElementById('swal-edit-plat-url').value.trim(),
+                            icon_class: document.getElementById('swal-edit-plat-icon').value.trim(),
+                            accent_color: document.getElementById('swal-edit-plat-color').value,
+                            badge_label: document.getElementById('swal-edit-plat-badge').value.trim(),
+                            is_active: document.getElementById('swal-edit-plat-active').value
+                        };
+                    }
+                });
+
+                if (formValues) {
+                    const fd = new FormData();
+                    Object.keys(formValues).forEach(k => fd.append(k, formValues[k]));
+                    const saveRes = await fetch(`/workspaces/platforms/update/${platformId}/`, {
+                        method: 'POST',
+                        headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+                        body: fd
+                    });
+                    const saveJson = await saveRes.json();
+                    if (saveJson.type === 'success') {
+                        await Swal.fire({ title: 'Updated!', text: saveJson.message, icon: 'success', background: '#1e293b', color: '#f8fafc', confirmButtonColor: '#0d9488' });
+                        window.location.reload();
+                    } else {
+                        Swal.fire({ title: 'Error', text: saveJson.message, icon: 'warning', background: '#1e293b', color: '#f8fafc' });
+                    }
+                }
+            } catch (err) {
+                Swal.fire({ title: 'Error', text: err.message, icon: 'error', background: '#1e293b', color: '#f8fafc' });
+            }
+        }
+
+        async function deleteCommunityPlatform(platformId, platformName) {
+            const confirmed = await Swal.fire({
+                title: 'Remove Server Connection?',
+                text: `Disconnect ${platformName} from the ecosystem directory?`,
+                icon: 'warning',
+                background: '#1e293b',
+                color: '#f8fafc',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#475569',
+                confirmButtonText: 'Yes, remove connection'
+            });
+
+            if (confirmed.isConfirmed) {
+                try {
+                    const res = await fetch(`/workspaces/platforms/delete/${platformId}/`, {
+                        method: 'POST',
+                        headers: { 'X-CSRFToken': '{{ csrf_token }}' }
+                    });
+                    const data = await res.json();
+                    if (data.type === 'success') {
+                        await Swal.fire({ title: 'Removed', text: data.message, icon: 'success', background: '#1e293b', color: '#f8fafc', confirmButtonColor: '#0d9488' });
+                        window.location.reload();
+                    } else {
+                        Swal.fire({ title: 'Error', text: data.message, icon: 'warning', background: '#1e293b', color: '#f8fafc' });
+                    }
+                } catch (err) {
+                    Swal.fire({ title: 'Error', text: err.message, icon: 'error', background: '#1e293b', color: '#f8fafc' });
+                }
+            }
+        }
+    </script>
+</body>
+</html>

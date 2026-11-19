@@ -1,0 +1,6 @@
+# asgi.py — retail_hub
+import os
+from django.core.asgi import get_asgi_application
+
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'retail_hub.settings_prod')
+application = get_asgi_application()

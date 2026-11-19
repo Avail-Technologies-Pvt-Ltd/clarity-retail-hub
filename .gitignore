@@ -1,0 +1,65 @@
+# ─────────────────────────────────────────────
+#  Clarity Retail Hub — .gitignore
+# ─────────────────────────────────────────────
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+.mypy_cache/
+.pytest_cache/
+.tox/
+.nox/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Django
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+staticfiles/
+mediafiles/
+media/
+
+# Environment / secrets
+.env
+.env.prod
+.env.*
+!.env.example
+!.env.prod.example
+cookies.txt
+
+# Docker
+*.override.yml
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Coverage
+.coverage
+htmlcov/
+coverage.xml
+
+# Node (if any frontend tooling)
+node_modules/
+npm-debug.log*
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
