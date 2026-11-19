@@ -8,17 +8,19 @@ services:
     image: postgres:13
     container_name: clarity_hub_prod_db
     restart: always
+    env_file:
+      - .env.prod
     environment:
       POSTGRES_DB: ${DB_NAME:-clarity_retail_hub_prod}
       POSTGRES_USER: ${DB_USER:-hub_prod_user}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-clarity_hub_secure_pg_pass}
     volumes:
       - hub_postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-hub_prod_user} -d ${DB_NAME:-clarity_retail_hub_prod}"]
-      interval: 10s
+      interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
       start_period: 10s
 
   web:
@@ -31,6 +33,9 @@ services:
       - .env.prod
     environment:
       - DJANGO_SETTINGS_MODULE=retail_hub.settings_prod
+      - DB_NAME=${DB_NAME:-clarity_retail_hub_prod}
+      - DB_USER=${DB_USER:-hub_prod_user}
+      - DB_PASSWORD=${DB_PASSWORD:-clarity_hub_secure_pg_pass}
       - DB_HOST=db
       - DB_PORT=5432
       - PYTHONUNBUFFERED=1

@@ -164,6 +164,8 @@ jobs:
               else
                 echo "DOCKER_REGISTRY=$DOCKER_USER" >> .env.prod
               fi
+              # Ensure .env also mirrors .env.prod for Docker Compose variable interpolation
+              cp -f .env.prod .env
             fi
 
             export DOCKER_REGISTRY="$DOCKER_USER"
@@ -175,10 +177,10 @@ jobs:
             fi
 
             echo "[4/5] Pulling latest production container image ($DOCKER_REGISTRY/clarity-retail-hub:latest)..."
-            DOCKER_REGISTRY="$DOCKER_USER" docker compose pull web
+            DOCKER_REGISTRY="$DOCKER_USER" docker compose --env-file .env.prod pull web
 
             echo "[5/5] Recreating and updating application container..."
-            DOCKER_REGISTRY="$DOCKER_USER" docker compose up -d --remove-orphans
+            DOCKER_REGISTRY="$DOCKER_USER" docker compose --env-file .env.prod up -d --remove-orphans
 
             echo "Cleaning up unused dangling images..."
             docker image prune -f

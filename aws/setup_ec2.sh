@@ -133,7 +133,10 @@ SESSION_COOKIE_SECURE=False
 EOF
     chown "$TARGET_USER:$TARGET_USER" "$APP_DIR/.env.prod"
     chmod 600 "$APP_DIR/.env.prod"
-    echo "[OK] Created $APP_DIR/.env.prod with secure random credentials."
+    cp -f "$APP_DIR/.env.prod" "$APP_DIR/.env"
+    chown "$TARGET_USER:$TARGET_USER" "$APP_DIR/.env"
+    chmod 600 "$APP_DIR/.env.env" 2>/dev/null || true
+    echo "[OK] Created $APP_DIR/.env.prod and .env with secure random credentials."
 fi
 
 echo "[4/6] Creating helper scripts (update.sh and rollback.sh)..."
