@@ -1,9 +1,11 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Clarity Retail — Clarity Community Suite by Avail Technologies</title>
+    <link rel="icon" type="image/png" href="{% static 'images/favicon.png' %}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -521,12 +523,9 @@
 
     <!-- Header Navigation -->
     <header class="header">
-        <a href="/" class="brand-container">
-            <span class="brand-badge">CLARITY</span>
-            <div>
-                <div class="brand-title">Retail Cloud Hub</div>
-                <div class="brand-sub">Clarity Community Suite</div>
-            </div>
+        <a href="/" class="brand-container" style="display:flex; align-items:center; gap:12px; text-decoration:none;">
+            <img src="{% static 'images/clarity-retail-logo.png' %}" alt="Clarity Retail" style="height:36px; width:auto; object-fit:contain; filter:drop-shadow(0 2px 8px rgba(0,0,0,0.4));">
+            <span style="font-size:.72rem; background:rgba(20,184,166,0.16); color:#2dd4bf; border:1px solid rgba(20,184,166,0.35); padding:2px 8px; border-radius:4px; font-weight:700; letter-spacing:.05em; text-transform:uppercase;">Cloud Hub</span>
         </a>
 
         <div class="nav-links">
@@ -546,6 +545,9 @@
 
     <!-- Hero Section -->
     <section class="hero">
+        <div style="margin-bottom: 22px; display: flex; justify-content: center;">
+            <img src="{% static 'images/clarity-retail-logo.png' %}" alt="Clarity Retail" style="max-height: 75px; width: auto; object-fit: contain; filter: drop-shadow(0 10px 30px rgba(0,0,0,0.6));">
+        </div>
         <div class="suite-tag">
             <i class="fa-solid fa-cube"></i> AVAIL TECHNOLOGIES CLARITY COMMUNITY SUITE
         </div>

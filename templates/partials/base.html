@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Clarity Retail Hub — {% block title %}{% endblock %}</title>
+    <link rel="icon" type="image/png" href="{% static 'images/favicon.png' %}">
 
     <!-- Font Awesome (Free CDN for online hub) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -804,12 +805,9 @@
             <button type="button" id="sidebar-collapse-btn" onclick="toggleSidebarCollapse()" title="Toggle Sidebar Width">
                 <i class="fa-solid fa-bars-staggered" id="sidebar-collapse-icon"></i>
             </button>
-            <a href="/" class="brand-wrap">
-                <img src="{% static 'images/clarity-retail-mark.png' %}" alt="Clarity Retail" style="height:32px; width:32px; object-fit:contain; filter:drop-shadow(0 2px 6px rgba(0,0,0,0.4));">
-                <div>
-                    <span class="brand-title">Retail Hub</span>
-                    <span class="brand-sub">Cloud</span>
-                </div>
+            <a href="/" class="brand-wrap" style="display:flex; align-items:center; gap:10px; text-decoration:none;">
+                <img src="{% static 'images/clarity-retail-logo.png' %}" alt="Clarity Retail" style="height:28px; width:auto; object-fit:contain; filter:drop-shadow(0 2px 6px rgba(0,0,0,0.4));">
+                <span style="font-size:.65rem; background:rgba(20,184,166,0.16); color:#2dd4bf; border:1px solid rgba(20,184,166,0.35); padding:1px 6px; border-radius:3px; font-weight:700; text-transform:uppercase;">Hub</span>
             </a>
         </div>
 
